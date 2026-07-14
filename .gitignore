@@ -1,0 +1,46 @@
+# ---- Java / Maven (backend) ----
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ---- Node / React / Vite (frontend) ----
+node_modules/
+dist/
+dist-ssr/
+build/
+*.local
+.vite/
+
+# ---- Ortam / Gizli bilgiler ----
+.env
+.env.*
+!.env.example
+
+# ---- IDE ----
+.idea/
+*.iml
+*.iws
+.vscode/
+!.vscode/extensions.json
+.settings/
+.classpath
+.project
+.factorypath
+*.sublime-workspace
+
+# ---- Log ve gecici dosyalar ----
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# ---- Isletim sistemi ----
+.DS_Store
+Thumbs.db
+desktop.ini
