@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.surumnotu.backend.dto.LoginRequest;
 import com.surumnotu.backend.dto.LoginResponse;
+import com.surumnotu.backend.dto.RegisterRequest;
 import com.surumnotu.backend.service.AuthService;
+import com.surumnotu.backend.service.UsernameAlreadyExistsException;
 
 import jakarta.validation.Valid;
 
@@ -31,8 +33,19 @@ public class AuthController {
         return ResponseEntity.ok(new LoginResponse(token));
     }
 
+    @PostMapping("/register")
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
+        authService.register(request.username(), request.password());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<String> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    public ResponseEntity<String> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
     }
 }

@@ -4,6 +4,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.surumnotu.backend.entity.Role;
 import com.surumnotu.backend.entity.User;
 import com.surumnotu.backend.repository.UserRepository;
 
@@ -29,5 +30,19 @@ public class AuthService {
         }
 
         return jwtService.generateToken(user.getUsername());
+    }
+
+    public void register(String username, String rawPassword) {
+        if (userRepository.findByUsername(username).isPresent()) {
+            throw new UsernameAlreadyExistsException(username);
+        }
+
+        User user = User.builder()
+                .username(username)
+                .password(passwordEncoder.encode(rawPassword))
+                .role(Role.USER)
+                .build();
+
+        userRepository.save(user);
     }
 }
