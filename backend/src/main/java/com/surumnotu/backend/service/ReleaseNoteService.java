@@ -2,6 +2,8 @@ package com.surumnotu.backend.service;
 
 import java.util.List;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 
 import com.surumnotu.backend.dto.CategoryResponse;
@@ -63,12 +65,16 @@ public class ReleaseNoteService {
         ReleaseNote note = ReleaseNote.builder()
                 .version(request.version())
                 .releaseDate(request.releaseDate())
-                .contentMarkdown(request.contentMarkdown())
+                .contentMarkdown(sanitize(request.contentMarkdown()))
                 .category(category)
                 .createdBy(creator)
                 .build();
 
         return toResponse(releaseNoteRepository.save(note));
+    }
+
+    private String sanitize(String rawContent) {
+        return Jsoup.clean(rawContent, Safelist.none());
     }
 
     private ReleaseNoteResponse toResponse(ReleaseNote note) {
