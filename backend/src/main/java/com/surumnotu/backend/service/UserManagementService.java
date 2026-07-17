@@ -41,6 +41,17 @@ public class UserManagementService {
                 .toList();
     }
 
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanici bulunamadi: " + id));
+
+        if (user.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
+            throw new LastAdminException("Sistemde en az bir ADMIN kalmali, bu kullanici silinemez");
+        }
+
+        userRepository.delete(user);
+    }
+
     private UserResponse toResponse(User user) {
         return new UserResponse(user.getId(), user.getUsername(), user.getRole());
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { createUser, fetchUsers } from "../api/admin";
+import { createUser, deleteUser, fetchUsers } from "../api/admin";
 import type { AppUser, Role } from "../types";
 
 type AdminPageProps = {
@@ -11,6 +11,8 @@ function AdminPage({ token, onBack }: AdminPageProps) {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +33,25 @@ function AdminPage({ token, onBack }: AdminPageProps) {
       setListError(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {
       setLoadingUsers(false);
+    }
+  }
+
+  async function handleDeleteUser(user: AppUser) {
+    const confirmed = window.confirm(`"${user.username}" kullanıcısını silmek istediğinize emin misiniz?`);
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleteError(null);
+    setDeletingId(user.id);
+
+    try {
+      await deleteUser(token, user.id);
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Bir hata oluştu");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -67,6 +88,7 @@ function AdminPage({ token, onBack }: AdminPageProps) {
 
           {loadingUsers && <p className="text-sm text-gray-500">Yükleniyor...</p>}
           {listError && <p className="text-red-600 text-sm">{listError}</p>}
+          {deleteError && <p className="text-red-600 text-sm mb-2">{deleteError}</p>}
 
           {!loadingUsers && !listError && (
             <table className="w-full text-left text-sm">
@@ -74,6 +96,7 @@ function AdminPage({ token, onBack }: AdminPageProps) {
                 <tr className="border-b border-gray-200">
                   <th className="py-2">Kullanıcı adı</th>
                   <th className="py-2">Rol</th>
+                  <th className="py-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -81,6 +104,15 @@ function AdminPage({ token, onBack }: AdminPageProps) {
                   <tr key={u.id} className="border-b border-gray-100">
                     <td className="py-2">{u.username}</td>
                     <td className="py-2">{u.role}</td>
+                    <td className="py-2 text-right">
+                      <button
+                        onClick={() => handleDeleteUser(u)}
+                        disabled={deletingId === u.id}
+                        className="text-red-600 hover:underline disabled:opacity-50"
+                      >
+                        {deletingId === u.id ? "Siliniyor..." : "Sil"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

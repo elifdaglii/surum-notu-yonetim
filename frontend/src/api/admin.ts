@@ -47,3 +47,27 @@ export async function createUser(token: string, input: CreateUserInput): Promise
 
   return (await response.json()) as AppUser;
 }
+
+/**
+ * DELETE /api/admin/users/{id} isteği atar. Sadece ADMIN token'ı ile çalışır.
+ */
+export async function deleteUser(token: string, id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 409) {
+    throw new Error("Sistemde en az bir ADMIN kalmalı, bu kullanıcı silinemez");
+  }
+
+  if (response.status === 404) {
+    throw new Error("Kullanıcı bulunamadı, zaten silinmiş olabilir");
+  }
+
+  if (!response.ok) {
+    throw new Error("Kullanıcı silinemedi");
+  }
+}
