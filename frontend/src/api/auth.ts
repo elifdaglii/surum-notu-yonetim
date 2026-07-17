@@ -1,12 +1,19 @@
+import type { Role } from "../types";
+
 // Backend'in adresi. Spring Boot varsayılan olarak 8080 portunda çalışır.
-const API_BASE_URL = "http://localhost:8080";
+export const API_BASE_URL = "http://localhost:8080";
+
+type LoginResult = {
+  token: string;
+  role: Role;
+};
 
 /**
  * POST /api/auth/login isteği atar.
- * Başarılı olursa JWT token'ı döner.
+ * Başarılı olursa JWT token'ı ve kullanıcının rolünü döner.
  * Başarısız olursa (401 Unauthorized) Error fırlatır.
  */
-export async function login(username: string, password: string): Promise<string> {
+export async function login(username: string, password: string): Promise<LoginResult> {
   const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: "POST",
     headers: {
@@ -21,6 +28,5 @@ export async function login(username: string, password: string): Promise<string>
     throw new Error("Kullanıcı adı veya şifre hatalı");
   }
 
-  const data = (await response.json()) as { token: string };
-  return data.token;
+  return (await response.json()) as LoginResult;
 }

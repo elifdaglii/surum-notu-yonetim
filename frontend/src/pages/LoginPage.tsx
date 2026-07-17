@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { login } from "../api/auth";
+import type { Role } from "../types";
 
 type LoginPageProps = {
-  onLoginSuccess: (token: string) => void;
+  onLoginSuccess: (token: string, role: Role) => void;
 };
 
 function LoginPage({ onLoginSuccess }: LoginPageProps) {
@@ -17,8 +18,8 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
 
     try {
-      const token = await login(username, password);
-      onLoginSuccess(token);
+      const { token, role } = await login(username, password);
+      onLoginSuccess(token, role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {

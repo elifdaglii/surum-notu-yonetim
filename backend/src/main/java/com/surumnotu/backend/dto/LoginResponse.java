@@ -1,4 +1,6 @@
 package com.surumnotu.backend.dto;
 
-public record LoginResponse(String token) {
+import com.surumnotu.backend.entity.Role;
+
+public record LoginResponse(String token, Role role) {
 }

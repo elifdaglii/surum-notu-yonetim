@@ -4,6 +4,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.surumnotu.backend.dto.LoginResponse;
 import com.surumnotu.backend.entity.Role;
 import com.surumnotu.backend.entity.User;
 import com.surumnotu.backend.repository.UserRepository;
@@ -21,7 +22,7 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-    public String login(String username, String rawPassword) {
+    public LoginResponse login(String username, String rawPassword) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BadCredentialsException("Kullanici adi veya sifre hatali"));
 
@@ -29,7 +30,8 @@ public class AuthService {
             throw new BadCredentialsException("Kullanici adi veya sifre hatali");
         }
 
-        return jwtService.generateToken(user.getUsername());
+        String token = jwtService.generateToken(user.getUsername());
+        return new LoginResponse(token, user.getRole());
     }
 
     public void register(String username, String rawPassword) {
