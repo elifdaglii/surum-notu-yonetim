@@ -3,6 +3,8 @@ import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import type { Role } from "./types";
 
+import { Button } from "@/components/ui/button";
+
 type View = "home" | "admin";
 
 function App() {
@@ -34,29 +36,24 @@ function App() {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
+  // Route guard: admin görünümü sadece role === "ADMIN" olduğunda render edilir.
+  // ADMIN olmayan biri (örn. state manipülasyonuyla) view'u "admin" yapsa bile
+  // bu koşul false olduğu için aşağıdaki ana sayfa (arşiv listesi) görünümüne düşer.
   if (view === "admin" && role === "ADMIN") {
-    return <AdminPage token={token} onBack={() => setView("home")} />;
+    return <AdminPage token={token} onLogout={handleLogout} />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-100">
-      <p className="text-lg">Giriş başarılı! ({role})</p>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">
+      <p className="text-lg text-foreground">Giriş başarılı! ({role})</p>
 
-      {role === "ADMIN" && (
-        <button
-          onClick={() => setView("admin")}
-          className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700"
-        >
-          Admin Paneli
-        </button>
-      )}
+      {/* Bu buton sadece ADMIN rolüne render ediliyor; USER rolündeki biri
+          admin paneline giden linki/menüyü hiç görmüyor. */}
+      {role === "ADMIN" && <Button onClick={() => setView("admin")}>Admin Paneli</Button>}
 
-      <button
-        onClick={handleLogout}
-        className="bg-gray-700 text-white rounded px-4 py-2 hover:bg-gray-800"
-      >
+      <Button variant="outline" onClick={handleLogout}>
         Çıkış Yap
-      </button>
+      </Button>
     </div>
   );
 }

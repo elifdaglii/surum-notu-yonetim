@@ -3,14 +3,33 @@ import { createUser, deleteUser, fetchUsers } from "../api/admin";
 import { createCategory, fetchCategories } from "../api/categories";
 import type { AppUser, Category, Role } from "../types";
 
+import { AdminSidebar, type AdminTab } from "@/components/admin-sidebar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 type AdminPageProps = {
   token: string;
-  onBack: () => void;
+  onLogout: () => void;
 };
 
-type AdminTab = "users" | "categories";
-
-function AdminPage({ token, onBack }: AdminPageProps) {
+function AdminPage({ token, onLogout }: AdminPageProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
 
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -115,197 +134,189 @@ function AdminPage({ token, onBack }: AdminPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-2xl mx-auto flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Admin Paneli</h1>
-          <button onClick={onBack} className="text-blue-600 hover:underline">
-            ← Geri
-          </button>
-        </div>
+    <div className="flex min-h-screen bg-background">
+      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={onLogout} />
 
-        <div className="flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`px-3 py-2 font-medium border-b-2 ${
-              activeTab === "users"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Kullanıcı Yönetimi
-          </button>
-          <button
-            onClick={() => setActiveTab("categories")}
-            className={`px-3 py-2 font-medium border-b-2 ${
-              activeTab === "categories"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Kategori Yönetimi
-          </button>
-        </div>
+      <main className="flex-1 p-8">
+        <div className="mx-auto flex max-w-2xl flex-col gap-6">
+          {activeTab === "users" && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kullanıcılar</CardTitle>
+                  <CardDescription>Sistemdeki tüm kullanıcılar ve rolleri</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingUsers && <p className="text-sm text-muted-foreground">Yükleniyor...</p>}
+                  {listError && <p className="text-sm text-destructive">{listError}</p>}
+                  {deleteError && <p className="mb-2 text-sm text-destructive">{deleteError}</p>}
 
-        {activeTab === "users" && (
-        <>
-        <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="font-medium mb-3">Kullanıcılar</h2>
+                  {!loadingUsers && !listError && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Kullanıcı adı</TableHead>
+                          <TableHead>Rol</TableHead>
+                          <TableHead className="text-right"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map((u) => (
+                          <TableRow key={u.id}>
+                            <TableCell>{u.username}</TableCell>
+                            <TableCell>
+                              <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>
+                                {u.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteUser(u)}
+                                disabled={deletingId === u.id}
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                {deletingId === u.id ? "Siliniyor..." : "Sil"}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
 
-          {loadingUsers && <p className="text-sm text-gray-500">Yükleniyor...</p>}
-          {listError && <p className="text-red-600 text-sm">{listError}</p>}
-          {deleteError && <p className="text-red-600 text-sm mb-2">{deleteError}</p>}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Yeni Kullanıcı Ekle</CardTitle>
+                </CardHeader>
 
-          {!loadingUsers && !listError && (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="py-2">Kullanıcı adı</th>
-                  <th className="py-2">Rol</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-100">
-                    <td className="py-2">{u.username}</td>
-                    <td className="py-2">{u.role}</td>
-                    <td className="py-2 text-right">
-                      <button
-                        onClick={() => handleDeleteUser(u)}
-                        disabled={deletingId === u.id}
-                        className="text-red-600 hover:underline disabled:opacity-50"
+                <form onSubmit={handleCreateUser}>
+                  <CardContent className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="new-username" className="text-sm font-medium">
+                        Kullanıcı adı
+                      </label>
+                      <Input
+                        id="new-username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="new-password" className="text-sm font-medium">
+                        Şifre
+                      </label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={8}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="new-role" className="text-sm font-medium">
+                        Rol
+                      </label>
+                      <select
+                        id="new-role"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value as Role)}
+                        className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
                       >
-                        {deletingId === u.id ? "Siliniyor..." : "Sil"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
+                    </div>
+
+                    {formError && <p className="text-sm text-destructive">{formError}</p>}
+                  </CardContent>
+
+                  <CardFooter>
+                    <Button type="submit" disabled={submitting} className="w-full">
+                      {submitting ? "Ekleniyor..." : "Kullanıcı Ekle"}
+                    </Button>
+                  </CardFooter>
+                </form>
+              </Card>
+            </>
           )}
-        </section>
 
-        <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="font-medium mb-3">Yeni Kullanıcı Ekle</h2>
+          {activeTab === "categories" && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kategoriler</CardTitle>
+                  <CardDescription>Sürüm notlarında kullanılabilecek kategoriler</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingCategories && <p className="text-sm text-muted-foreground">Yükleniyor...</p>}
+                  {categoryListError && <p className="text-sm text-destructive">{categoryListError}</p>}
 
-          <form onSubmit={handleCreateUser} className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="new-username" className="text-sm text-gray-600">
-                Kullanıcı adı
-              </label>
-              <input
-                id="new-username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="border border-gray-300 rounded px-3 py-2"
-                required
-              />
-            </div>
+                  {!loadingCategories && !categoryListError && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Kategori adı</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categories.map((c) => (
+                          <TableRow key={c.id}>
+                            <TableCell>{c.name}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="new-password" className="text-sm text-gray-600">
-                Şifre
-              </label>
-              <input
-                id="new-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="border border-gray-300 rounded px-3 py-2"
-                required
-                minLength={8}
-              />
-            </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Yeni Kategori Ekle</CardTitle>
+                </CardHeader>
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="new-role" className="text-sm text-gray-600">
-                Rol
-              </label>
-              <select
-                id="new-role"
-                value={role}
-                onChange={(e) => setRole(e.target.value as Role)}
-                className="border border-gray-300 rounded px-3 py-2"
-              >
-                <option value="USER">USER</option>
-                <option value="ADMIN">ADMIN</option>
-              </select>
-            </div>
+                <form onSubmit={handleCreateCategory}>
+                  <CardContent className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="new-category-name" className="text-sm font-medium">
+                        Kategori adı
+                      </label>
+                      <Input
+                        id="new-category-name"
+                        type="text"
+                        value={categoryName}
+                        onChange={(e) => setCategoryName(e.target.value)}
+                        required
+                      />
+                    </div>
 
-            {formError && <p className="text-red-600 text-sm">{formError}</p>}
+                    {categoryFormError && (
+                      <p className="text-sm text-destructive">{categoryFormError}</p>
+                    )}
+                  </CardContent>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="bg-blue-600 text-white rounded px-3 py-2 font-medium hover:bg-blue-700 disabled:opacity-50"
-            >
-              {submitting ? "Ekleniyor..." : "Kullanıcı Ekle"}
-            </button>
-          </form>
-        </section>
-        </>
-        )}
-
-        {activeTab === "categories" && (
-        <>
-        <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="font-medium mb-3">Kategoriler</h2>
-
-          {loadingCategories && <p className="text-sm text-gray-500">Yükleniyor...</p>}
-          {categoryListError && <p className="text-red-600 text-sm">{categoryListError}</p>}
-
-          {!loadingCategories && !categoryListError && (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="py-2">Kategori adı</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((c) => (
-                  <tr key={c.id} className="border-b border-gray-100">
-                    <td className="py-2">{c.name}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  <CardFooter>
+                    <Button type="submit" disabled={submittingCategory} className="w-full">
+                      {submittingCategory ? "Ekleniyor..." : "Kategori Ekle"}
+                    </Button>
+                  </CardFooter>
+                </form>
+              </Card>
+            </>
           )}
-        </section>
-
-        <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="font-medium mb-3">Yeni Kategori Ekle</h2>
-
-          <form onSubmit={handleCreateCategory} className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="new-category-name" className="text-sm text-gray-600">
-                Kategori adı
-              </label>
-              <input
-                id="new-category-name"
-                type="text"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                className="border border-gray-300 rounded px-3 py-2"
-                required
-              />
-            </div>
-
-            {categoryFormError && <p className="text-red-600 text-sm">{categoryFormError}</p>}
-
-            <button
-              type="submit"
-              disabled={submittingCategory}
-              className="bg-blue-600 text-white rounded px-3 py-2 font-medium hover:bg-blue-700 disabled:opacity-50"
-            >
-              {submittingCategory ? "Ekleniyor..." : "Kategori Ekle"}
-            </button>
-          </form>
-        </section>
-        </>
-        )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
