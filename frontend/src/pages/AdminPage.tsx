@@ -1,13 +1,18 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createUser, deleteUser, fetchUsers } from "../api/admin";
-import type { AppUser, Role } from "../types";
+import { createCategory, fetchCategories } from "../api/categories";
+import type { AppUser, Category, Role } from "../types";
 
 type AdminPageProps = {
   token: string;
   onBack: () => void;
 };
 
+type AdminTab = "users" | "categories";
+
 function AdminPage({ token, onBack }: AdminPageProps) {
+  const [activeTab, setActiveTab] = useState<AdminTab>("users");
+
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
@@ -20,8 +25,16 @@ function AdminPage({ token, onBack }: AdminPageProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [categoryListError, setCategoryListError] = useState<string | null>(null);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryFormError, setCategoryFormError] = useState<string | null>(null);
+  const [submittingCategory, setSubmittingCategory] = useState(false);
+
   useEffect(() => {
     loadUsers();
+    loadCategories();
   }, []);
 
   async function loadUsers() {
@@ -73,6 +86,34 @@ function AdminPage({ token, onBack }: AdminPageProps) {
     }
   }
 
+  async function loadCategories() {
+    setLoadingCategories(true);
+    setCategoryListError(null);
+    try {
+      setCategories(await fetchCategories());
+    } catch (err) {
+      setCategoryListError(err instanceof Error ? err.message : "Bir hata oluştu");
+    } finally {
+      setLoadingCategories(false);
+    }
+  }
+
+  async function handleCreateCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCategoryFormError(null);
+    setSubmittingCategory(true);
+
+    try {
+      await createCategory(token, { name: categoryName });
+      setCategoryName("");
+      await loadCategories();
+    } catch (err) {
+      setCategoryFormError(err instanceof Error ? err.message : "Bir hata oluştu");
+    } finally {
+      setSubmittingCategory(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-2xl mx-auto flex flex-col gap-6">
@@ -83,6 +124,31 @@ function AdminPage({ token, onBack }: AdminPageProps) {
           </button>
         </div>
 
+        <div className="flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-3 py-2 font-medium border-b-2 ${
+              activeTab === "users"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Kullanıcı Yönetimi
+          </button>
+          <button
+            onClick={() => setActiveTab("categories")}
+            className={`px-3 py-2 font-medium border-b-2 ${
+              activeTab === "categories"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Kategori Yönetimi
+          </button>
+        </div>
+
+        {activeTab === "users" && (
+        <>
         <section className="bg-white rounded-lg shadow-md p-6">
           <h2 className="font-medium mb-3">Kullanıcılar</h2>
 
@@ -179,6 +245,66 @@ function AdminPage({ token, onBack }: AdminPageProps) {
             </button>
           </form>
         </section>
+        </>
+        )}
+
+        {activeTab === "categories" && (
+        <>
+        <section className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="font-medium mb-3">Kategoriler</h2>
+
+          {loadingCategories && <p className="text-sm text-gray-500">Yükleniyor...</p>}
+          {categoryListError && <p className="text-red-600 text-sm">{categoryListError}</p>}
+
+          {!loadingCategories && !categoryListError && (
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="py-2">Kategori adı</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((c) => (
+                  <tr key={c.id} className="border-b border-gray-100">
+                    <td className="py-2">{c.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="font-medium mb-3">Yeni Kategori Ekle</h2>
+
+          <form onSubmit={handleCreateCategory} className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="new-category-name" className="text-sm text-gray-600">
+                Kategori adı
+              </label>
+              <input
+                id="new-category-name"
+                type="text"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2"
+                required
+              />
+            </div>
+
+            {categoryFormError && <p className="text-red-600 text-sm">{categoryFormError}</p>}
+
+            <button
+              type="submit"
+              disabled={submittingCategory}
+              className="bg-blue-600 text-white rounded px-3 py-2 font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {submittingCategory ? "Ekleniyor..." : "Kategori Ekle"}
+            </button>
+          </form>
+        </section>
+        </>
+        )}
       </div>
     </div>
   );

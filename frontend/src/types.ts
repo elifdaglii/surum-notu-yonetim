@@ -5,3 +5,8 @@ export type AppUser = {
   username: string;
   role: Role;
 };
+
+export type Category = {
+  id: number;
+  name: string;
+};
