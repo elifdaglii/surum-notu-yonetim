@@ -9,9 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // Birincil aksiyonlar (Giriş Yap, Ekle vs.): dolu primary + altında hafif bir "glow" (shadow-primary/20).
+        default: "bg-primary text-primary-foreground hover:bg-primary/80 shadow-lg shadow-primary/20",
+        // İkincil aksiyonlar (Çıkış Yap, tema anahtarı vs.): sadece border + şeffaf zemin + foreground metin.
+        // --border ve --foreground token'larına bağlı olduğu için light/dark otomatik doğru tona düşüyor,
+        // ayrı ayrı slate/zinc hardcode etmeye gerek kalmıyor.
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-border bg-transparent text-foreground hover:bg-muted",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:

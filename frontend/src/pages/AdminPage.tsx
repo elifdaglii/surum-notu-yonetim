@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Loader2, Trash2 } from "lucide-react";
 import { createUser, deleteUser, fetchUsers } from "../api/admin";
 import { createCategory, fetchCategories } from "../api/categories";
 import type { AppUser, Category, Role } from "../types";
@@ -165,20 +166,29 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                           <TableRow key={u.id}>
                             <TableCell>{u.username}</TableCell>
                             <TableCell>
-                              <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>
-                                {u.role}
-                              </Badge>
+                              {/* Rol gösterimi solid/outline badge değil: nötr bg-muted zemin +
+                                  monospace font ("USER"/"ADMIN" kod-benzeri bir değer gibi duruyor). */}
+                              <Badge variant="mono">{u.role}</Badge>
                             </TableCell>
                             <TableCell className="text-right">
+                              {/* Metin butonu yerine sadece ikon: varsayılan nötr/muted renk, hover'da
+                                  destructive metin rengine + destructive-container'ın %10 opacity bg'sine
+                                  geçiyor (iki ayrı token: biri metin/ikon, diğeri hover zemin tonu).
+                                  Silme sırasında ikon dönen bir spinner'a dönüşüyor. */}
                               <Button
                                 type="button"
                                 variant="ghost"
-                                size="sm"
+                                size="icon"
                                 onClick={() => handleDeleteUser(u)}
                                 disabled={deletingId === u.id}
-                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                aria-label={deletingId === u.id ? "Siliniyor" : `${u.username} kullanıcısını sil`}
+                                className="text-muted-foreground hover:bg-destructive-container/10 hover:text-destructive"
                               >
-                                {deletingId === u.id ? "Siliniyor..." : "Sil"}
+                                {deletingId === u.id ? (
+                                  <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="size-4" />
+                                )}
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -197,7 +207,7 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                 <form onSubmit={handleCreateUser}>
                   <CardContent className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="new-username" className="text-sm font-medium">
+                      <label htmlFor="new-username" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Kullanıcı adı
                       </label>
                       <Input
@@ -210,7 +220,7 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="new-password" className="text-sm font-medium">
+                      <label htmlFor="new-password" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Şifre
                       </label>
                       <Input
@@ -224,7 +234,7 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="new-role" className="text-sm font-medium">
+                      <label htmlFor="new-role" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Rol
                       </label>
                       <select
@@ -289,7 +299,7 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                 <form onSubmit={handleCreateCategory}>
                   <CardContent className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="new-category-name" className="text-sm font-medium">
+                      <label htmlFor="new-category-name" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Kategori adı
                       </label>
                       <Input

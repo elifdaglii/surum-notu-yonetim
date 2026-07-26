@@ -20,17 +20,24 @@ type NavItemProps = {
   onClick: () => void;
 };
 
-// Tek bir nav satırı: aktifse vurgu renginde dolu, değilse şeffaf + hover'da hafif gri.
+// Tek bir nav satırı: aktifse dolu pill değil, sol kenarda ince bir vurgu çizgisi (border-l-2)
+// + bg-primary/10 zemin + primary renginde metin. border-l-2 her zaman render ediliyor (aktif
+// değilken border-transparent) ki aktif/pasif geçişinde genişlik oynayıp satır kaymasın.
+//
+// Not: Stitch tarifi metin rengi için "primary-foreground" diyor - ama bu token bizde SOLID
+// primary buton üzerindeki yazı rengi (light'ta beyaz, dark'ta açık leylak). Neredeyse şeffaf
+// bg-primary/10 üzerine light modda beyaz yazı koysak metin okunmaz hale gelirdi. Bunun yerine
+// text-primary kullandık: vurgu rengi doğrudan metin rengi oluyor, her iki modda da okunaklı.
 function NavItem({ icon: Icon, label, active, onClick }: NavItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        "flex items-center gap-2 rounded-md border-l-2 px-3 py-2 text-sm font-medium transition-colors",
         active
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
       <Icon className="size-4" />

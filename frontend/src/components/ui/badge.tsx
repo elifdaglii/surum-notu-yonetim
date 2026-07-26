@@ -5,7 +5,8 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
+  // Stitch spesifikasyonu: badge/pill'ler tam yuvarlak (rounded-full).
+  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
     variants: {
       variant: {
@@ -24,6 +25,9 @@ const badgeVariants = cva(
         feature: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
         bugfix: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
         chore: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300",
+        /* Rol gösterimi için: solid renkli değil, nötr bg-muted + monospace font ("USER"/"ADMIN"
+           gibi kod-benzeri değerler için bilinçli bir detay, atlamayan bir font). */
+        mono: "bg-muted text-foreground font-mono",
       },
     },
     defaultVariants: {

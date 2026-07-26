@@ -2,12 +2,19 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+/* Sadece rol badge'leri ve kod/API-benzeri input'lar için: bilinçli, "atlamayan" bir monospace detayı. */
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
+    /* Rol badge'leri ve kod/API-benzeri input'lar font-mono utility'sini kullanacak */
+    --font-mono: 'JetBrains Mono Variable', monospace;
+    /* Stitch'in "error container" kavramı: bizim tek --destructive'imizden ayrı, kendi hex'i olan
+       bir token. --destructive artık SADECE hover/error metin/ikon rengi; bu ise hover bg wash'i. */
+    --color-destructive-container: var(--destructive-container);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -41,8 +48,11 @@
     --color-background: var(--background);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
+    /* Stitch spesifikasyonu net pixel değerleri istiyor: buton/input 8px, card/section 12px.
+       Eskiden ikisi de tek bir --radius taban değerinin katıydı (10px * 1 / * 1.4); artık formülü
+       bırakıp doğrudan istenen pixel'leri sabitliyoruz. */
+    --radius-lg: 8px;
+    --radius-xl: 12px;
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
@@ -57,20 +67,29 @@
     --card-foreground: #0f172a;
     --popover: #ffffff;
     --popover-foreground: #0f172a;
-    /* Tek vurgu rengi: indigo-600. Bu değeri .dark bloğunda DEĞİŞTİRMİYORUZ ki marka rengi her iki temada da aynı kalsın. */
-    --primary: #4f46e5;
+    /* Stitch çıktısındaki hue'ya geçtik: violet-700 (#6d28d9), önceki turun violet-600'ünden bir
+       tık daha koyu/derin. Light ve dark AYNI hex'i kullanıyor -> marka rengi tutarlı. */
+    --primary: #6d28d9;
+    /* Bu turda Stitch'in light mod tarifi net: koyu buton üzerinde BEYAZ yazı (kontrast için).
+       Önceki turun "koyu yazı" kararının yerini bu aldı - dark modda ise Stitch'in kendi
+       primary-foreground'u (#dac5ff, açık leylak) kullanılıyor, aşağıdaki .dark bloğuna bakın. */
     --primary-foreground: #ffffff;
     --secondary: #f1f5f9;
     --secondary-foreground: #0f172a;
     --muted: #f1f5f9;
     --muted-foreground: #64748b;
-    /* Dropdown/menu hover rengi de aynı indigo ailesinden, açık bir ton (indigo-50/indigo-700) */
-    --accent: #eef2ff;
-    --accent-foreground: #4338ca;
+    /* Dropdown/menu hover rengi: violet-100 zemin + violet-700 yazı (primary ile aynı hex, tutarlı) */
+    --accent: #ede9fe;
+    --accent-foreground: #6d28d9;
+    /* --destructive: sadece hover/error metin-ikon rengi, varsayılan değil. */
     --destructive: #dc2626;
+    /* --destructive-container: hover bg wash'i için (bg-destructive-container/10 şeklinde kullanılıyor).
+       Stitch sadece dark mod hex'i verdi (#93000a); light için aynı "container koyu, destructive canlı"
+       ilişkisini koruyarak red-800 kullandık. */
+    --destructive-container: #991b1b;
     --border: #e2e8f0;
     --input: #e2e8f0;
-    --ring: #6366f1;
+    --ring: #6d28d9;
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -88,28 +107,34 @@
 }
 
 .dark {
-    /* Pure black (#000) DEĞİL: slate-900. Göz yormayan, yumuşak bir koyu ton. */
-    --background: #0f172a;
-    --foreground: #f8fafc;
-    /* Kart, arka plandan bir tık açık (slate-800) ki üstünde "yükseliyor" gibi görünsün */
-    --card: #1e293b;
-    --card-foreground: #f8fafc;
-    --popover: #1e293b;
-    --popover-foreground: #f8fafc;
-    /* Aynı indigo-600: light modla birebir aynı hex, marka rengi tutarlı kalıyor */
-    --primary: #4f46e5;
-    --primary-foreground: #ffffff;
-    --secondary: #1e293b;
-    --secondary-foreground: #f8fafc;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    /* Karanlıkta da indigo tonunda bir hover/accent (indigo-950/indigo-300) */
-    --accent: #1e1b4b;
-    --accent-foreground: #a5b4fc;
-    --destructive: #ef4444;
-    --border: #334155;
-    --input: #334155;
-    --ring: #6366f1;
+    /* Stitch çıktısından birebir: sayfa arka planı, saf siyah değil ama ona çok yakın. */
+    --background: #0e0e10;
+    --foreground: #e5e1e4;
+    /* Card/section yüzeyi, arka plandan hafifçe ayrışıyor */
+    --card: #1c1b1d;
+    --card-foreground: #e5e1e4;
+    --popover: #1c1b1d;
+    --popover-foreground: #e5e1e4;
+    /* Light modla AYNI hex (#6d28d9) -> marka rengi moddan moda değişmiyor */
+    --primary: #6d28d9;
+    /* Stitch'in kendi primary-foreground'u: açık leylak, solid primary bg üzerinde okunaklı */
+    --primary-foreground: #dac5ff;
+    --secondary: #2a2a2c;
+    --secondary-foreground: #e5e1e4;
+    /* Tablo header bg / hover state bg olarak kullanılıyor */
+    --muted: #2a2a2c;
+    --muted-foreground: #ccc3d7;
+    /* Dropdown/menu hover: violet-950 zemin + violet-300 yazı (primary ailesiyle aynı hue) */
+    --accent: #2e1065;
+    --accent-foreground: #c4b5fd;
+    /* --destructive: sadece hover/error metin-ikon rengi, varsayılan olarak hiçbir yerde durmuyor */
+    --destructive: #ffb4ab;
+    /* --destructive-container: hover bg wash'i (bg-destructive-container/10 şeklinde kullanılıyor) */
+    --destructive-container: #93000a;
+    /* Tüm ince border'lar bu tona sahip: mora çalan bir koyu gri, primary hue'suyla uyumlu */
+    --border: #4a4455;
+    --input: #4a4455;
+    --ring: #6d28d9;
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
