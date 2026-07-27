@@ -20,11 +20,12 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
-        /* Sürüm notu kategori etiketleri: sabit, düz renkler. Aksan rengine (indigo) bağlı değiller,
-           böylece feature/bugfix/chore her zaman aynı renkte kalır, tema aksanı değişse bile karışmaz. */
-        feature: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
-        bugfix: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
-        chore: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300",
+        /* Sürüm notu kategori etiketleri (Özellik/Hata Çözümü/Altyapı): solid dolgu değil,
+           sadece ince renkli border + aynı renkte yazı, zemin şeffaf. Her biri sabit bir renkte
+           kalır (tema aksanına bağlı değil), böylece kategoriler her zaman ayırt edilebilir. */
+        feature: "border-green-600/50 text-green-700 dark:border-green-400/50 dark:text-green-400",
+        bugfix: "border-destructive/50 text-destructive",
+        chore: "border-primary/50 text-primary",
         /* Rol gösterimi için: solid renkli değil, nötr bg-muted + monospace font ("USER"/"ADMIN"
            gibi kod-benzeri değerler için bilinçli bir detay, atlamayan bir font). */
         mono: "bg-muted text-foreground font-mono",

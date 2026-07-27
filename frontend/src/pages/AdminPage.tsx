@@ -4,6 +4,7 @@ import { createUser, deleteUser, fetchUsers } from "../api/admin";
 import { createCategory, fetchCategories } from "../api/categories";
 import type { AppUser, Category, Role } from "../types";
 
+import { getUsernameFromToken } from "@/lib/jwt";
 import { AdminSidebar, type AdminTab } from "@/components/admin-sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,10 +28,16 @@ import {
 
 type AdminPageProps = {
   token: string;
+  onNavigateHome: () => void;
   onLogout: () => void;
 };
 
-function AdminPage({ token, onLogout }: AdminPageProps) {
+function AdminPage({ token, onNavigateHome, onLogout }: AdminPageProps) {
+  // Sidebar'ın altında gösterilecek giriş yapmış kullanıcının adı - JWT'nin "sub" claim'inden.
+  // "username" ismi aşağıdaki "yeni kullanıcı ekle" formunun state'iyle çakışacağı için
+  // ayrı bir isim kullandık.
+  const loggedInUsername = getUsernameFromToken(token);
+
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
 
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -136,7 +143,13 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={onLogout} />
+      <AdminSidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onNavigateHome={onNavigateHome}
+        onLogout={onLogout}
+        username={loggedInUsername}
+      />
 
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -166,9 +179,8 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                           <TableRow key={u.id}>
                             <TableCell>{u.username}</TableCell>
                             <TableCell>
-                              {/* Rol gösterimi solid/outline badge değil: nötr bg-muted zemin +
-                                  monospace font ("USER"/"ADMIN" kod-benzeri bir değer gibi duruyor). */}
-                              <Badge variant="mono">{u.role}</Badge>
+                              {/* Rol gösterimi solid dolgulu badge değil, ince border'lı outline badge. */}
+                              <Badge variant="outline">{u.role}</Badge>
                             </TableCell>
                             <TableCell className="text-right">
                               {/* Metin butonu yerine sadece ikon: varsayılan nötr/muted renk, hover'da

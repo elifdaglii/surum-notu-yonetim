@@ -1,8 +1,16 @@
-import { FileText, LogOut, Tag, Users } from "lucide-react";
+import { FileText, History, LogOut, Tag, Users } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export type AdminTab = "users" | "categories";
@@ -10,7 +18,12 @@ export type AdminTab = "users" | "categories";
 type AdminSidebarProps = {
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
+  // "Sürüm Notları" bir tab değil, admin panelinden çıkıp arşiv/ana sayfaya dönüyor.
+  onNavigateHome: () => void;
   onLogout: () => void;
+  // JWT'den decode edilmiş kullanıcı adı - sidebar'ın kendisi token/JWT bilmiyor,
+  // sadece görüntülenecek metni prop olarak alıyor.
+  username: string;
 };
 
 type NavItemProps = {
@@ -23,11 +36,6 @@ type NavItemProps = {
 // Tek bir nav satırı: aktifse dolu pill değil, sol kenarda ince bir vurgu çizgisi (border-l-2)
 // + bg-primary/10 zemin + primary renginde metin. border-l-2 her zaman render ediliyor (aktif
 // değilken border-transparent) ki aktif/pasif geçişinde genişlik oynayıp satır kaymasın.
-//
-// Not: Stitch tarifi metin rengi için "primary-foreground" diyor - ama bu token bizde SOLID
-// primary buton üzerindeki yazı rengi (light'ta beyaz, dark'ta açık leylak). Neredeyse şeffaf
-// bg-primary/10 üzerine light modda beyaz yazı koysak metin okunmaz hale gelirdi. Bunun yerine
-// text-primary kullandık: vurgu rengi doğrudan metin rengi oluyor, her iki modda da okunaklı.
 function NavItem({ icon: Icon, label, active, onClick }: NavItemProps) {
   return (
     <button
@@ -52,7 +60,15 @@ function NavItem({ icon: Icon, label, active, onClick }: NavItemProps) {
  * (position:fixed yerine sticky kullanmamızın sebebi, flex layout içinde otomatik
  * genişlik/konum hesaplanmasının fixed'e göre çok daha az manuel CSS gerektirmesi).
  */
-export function AdminSidebar({ activeTab, onTabChange, onLogout }: AdminSidebarProps) {
+export function AdminSidebar({
+  activeTab,
+  onTabChange,
+  onNavigateHome,
+  onLogout,
+  username,
+}: AdminSidebarProps) {
+  const initial = username.charAt(0).toUpperCase();
+
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r bg-card">
       <div className="flex items-center gap-2 border-b px-4 py-4">
@@ -65,7 +81,9 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout }: AdminSidebarP
         </div>
       </div>
 
+      {/* "Sürüm Notları" tab değil - tıklanınca admin panelinden çıkıp arşiv sayfasına döner. */}
       <nav className="flex flex-1 flex-col gap-1 p-2">
+        <NavItem icon={History} label="Sürüm Notları" active={false} onClick={onNavigateHome} />
         <NavItem
           icon={Users}
           label="Kullanıcılar"
@@ -85,10 +103,39 @@ export function AdminSidebar({ activeTab, onTabChange, onLogout }: AdminSidebarP
           <span className="text-xs text-muted-foreground">Tema</span>
           <ThemeToggle />
         </div>
-        <Button variant="outline" className="justify-start gap-2" onClick={onLogout}>
-          <LogOut className="size-4" />
-          Çıkış Yap
-        </Button>
+
+        {/* Kullanıcı bloğu aynı zamanda dropdown tetikleyici: tıklanınca "Çıkış Yap" açılır.
+            Ayrı bir çıkış butonu koymak yerine bu bloğa gömdük - Ana sayfadaki avatar
+            dropdown'uyla aynı desen, tutarlı bir etkileşim. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-lg p-2 text-left transition-colors hover:bg-muted"
+            >
+              <Avatar size="sm">
+                <AvatarFallback>{initial}</AvatarFallback>
+              </Avatar>
+              <div className="flex min-w-0 flex-col leading-tight">
+                <span className="truncate text-sm font-medium text-foreground">{username}</span>
+                <span className="text-xs text-muted-foreground">Admin</span>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>
+              <div className="flex flex-col">
+                <span className="font-medium">{username}</span>
+                <span className="text-xs font-normal text-muted-foreground">Admin</span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onLogout}>
+              <LogOut className="size-4" />
+              Çıkış Yap
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   );
