@@ -210,8 +210,10 @@ function HomePage({ token, role, onOpenAdmin, onLogout }: HomePageProps) {
                 key={note.id}
                 className="group relative border-l-2 border-l-transparent transition-colors hover:border-l-primary hover:bg-muted/30"
               >
-                {/* PDF/HTML indirme ikonları - şimdilik işlevsiz, sadece hover'da beliriyor. */}
-                <div className="absolute top-3 right-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                {/* PDF/HTML indirme ikonları - şimdilik işlevsiz. Önceden sadece hover'da opacity-100
+                    oluyordu; dokunmatik cihazlarda hover diye bir şey olmadığı için orada hiç
+                    görünmüyorlardı ve genel olarak fark edilmesi zordu. Artık her zaman görünür. */}
+                <div className="absolute top-3 right-3 flex gap-1">
                   <Button type="button" variant="ghost" size="icon-sm" aria-label="PDF indir">
                     <FileDown className="size-3.5" />
                   </Button>

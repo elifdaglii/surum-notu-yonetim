@@ -117,7 +117,7 @@ function AdminPage({ token, onNavigateHome, onLogout }: AdminPageProps) {
     setLoadingCategories(true);
     setCategoryListError(null);
     try {
-      setCategories(await fetchCategories());
+      setCategories(await fetchCategories(token));
     } catch (err) {
       setCategoryListError(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {

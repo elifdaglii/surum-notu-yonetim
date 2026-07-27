@@ -2,10 +2,18 @@ import { API_BASE_URL } from "./auth";
 import type { Category } from "../types";
 
 /**
- * GET /api/categories isteği atar. Herkes erişebilir, token gerekmez.
+ * GET /api/categories isteği atar.
+ * Not: Bu endpoint aslında "herkese açık" değil - backend'deki SecurityConfig
+ * "/api/auth/**" dışındaki HER isteği authenticated şartına bağlıyor
+ * (.anyRequest().authenticated()). Token gönderilmezse 403 Forbidden dönüyor.
+ * Önceki yorum yanlıştı; bu yüzden "Kategori listesi alınamadı" hatası çıkıyordu.
  */
-export async function fetchCategories(): Promise<Category[]> {
-  const response = await fetch(`${API_BASE_URL}/api/categories`);
+export async function fetchCategories(token: string): Promise<Category[]> {
+  const response = await fetch(`${API_BASE_URL}/api/categories`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   if (!response.ok) {
     throw new Error("Kategori listesi alınamadı");
