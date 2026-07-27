@@ -1,9 +1,8 @@
 import { useState } from "react";
 import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
+import HomePage from "./pages/HomePage";
 import type { Role } from "./types";
-
-import { Button } from "@/components/ui/button";
 
 type View = "home" | "admin";
 
@@ -44,17 +43,12 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">
-      <p className="text-lg text-foreground">Giriş başarılı! ({role})</p>
-
-      {/* Bu buton sadece ADMIN rolüne render ediliyor; USER rolündeki biri
-          admin paneline giden linki/menüyü hiç görmüyor. */}
-      {role === "ADMIN" && <Button onClick={() => setView("admin")}>Admin Paneli</Button>}
-
-      <Button variant="outline" onClick={handleLogout}>
-        Çıkış Yap
-      </Button>
-    </div>
+    <HomePage
+      token={token}
+      role={role}
+      onOpenAdmin={() => setView("admin")}
+      onLogout={handleLogout}
+    />
   );
 }
 
