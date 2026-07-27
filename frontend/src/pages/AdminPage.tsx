@@ -6,6 +6,7 @@ import type { AppUser, Category, Role } from "../types";
 
 import { getUsernameFromToken } from "@/lib/jwt";
 import { AdminSidebar, type AdminTab } from "@/components/admin-sidebar";
+import { ReleaseNotesArchive } from "@/components/release-notes-archive";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,11 +29,10 @@ import {
 
 type AdminPageProps = {
   token: string;
-  onNavigateHome: () => void;
   onLogout: () => void;
 };
 
-function AdminPage({ token, onNavigateHome, onLogout }: AdminPageProps) {
+function AdminPage({ token, onLogout }: AdminPageProps) {
   // Sidebar'ın altında gösterilecek giriş yapmış kullanıcının adı - JWT'nin "sub" claim'inden.
   // "username" ismi aşağıdaki "yeni kullanıcı ekle" formunun state'iyle çakışacağı için
   // ayrı bir isim kullandık.
@@ -146,12 +146,26 @@ function AdminPage({ token, onNavigateHome, onLogout }: AdminPageProps) {
       <AdminSidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onNavigateHome={onNavigateHome}
         onLogout={onLogout}
         username={loggedInUsername}
       />
 
       <main className="flex-1 p-8">
+        {activeTab === "releaseNotes" && (
+          <div className="mx-auto flex max-w-5xl flex-col gap-6">
+            {/* Tema toggle ve çıkış zaten sidebar'ın altında olduğu için burada tekrarlanmıyor -
+                sadece başlık + "+ Ekle" butonu. Arama/filtre/kart grid ReleaseNotesArchive'ın içinde. */}
+            <div className="flex items-center justify-between gap-3">
+              <h1 className="text-xl font-bold text-foreground">Geçmiş Sürüm Notları</h1>
+              {/* Şimdilik tıklanınca bir şey yapmıyor - içerik ekleme akışı ayrı bir adımda gelecek. */}
+              <Button type="button">+ Yeni Sürüm Notu Ekle</Button>
+            </div>
+
+            <ReleaseNotesArchive token={token} />
+          </div>
+        )}
+
+        {(activeTab === "users" || activeTab === "categories") && (
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
           {activeTab === "users" && (
             <>
@@ -338,6 +352,7 @@ function AdminPage({ token, onNavigateHome, onLogout }: AdminPageProps) {
             </>
           )}
         </div>
+        )}
       </main>
     </div>
   );

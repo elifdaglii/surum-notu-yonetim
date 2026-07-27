@@ -13,13 +13,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export type AdminTab = "users" | "categories";
+export type AdminTab = "releaseNotes" | "users" | "categories";
 
 type AdminSidebarProps = {
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
-  // "Sürüm Notları" bir tab değil, admin panelinden çıkıp arşiv/ana sayfaya dönüyor.
-  onNavigateHome: () => void;
   onLogout: () => void;
   // JWT'den decode edilmiş kullanıcı adı - sidebar'ın kendisi token/JWT bilmiyor,
   // sadece görüntülenecek metni prop olarak alıyor.
@@ -63,7 +61,6 @@ function NavItem({ icon: Icon, label, active, onClick }: NavItemProps) {
 export function AdminSidebar({
   activeTab,
   onTabChange,
-  onNavigateHome,
   onLogout,
   username,
 }: AdminSidebarProps) {
@@ -81,9 +78,15 @@ export function AdminSidebar({
         </div>
       </div>
 
-      {/* "Sürüm Notları" tab değil - tıklanınca admin panelinden çıkıp arşiv sayfasına döner. */}
+      {/* "Sürüm Notları" artık gerçek bir tab: sidebar'ın kendisi hiç kaybolmadan, aynı arşiv
+          component'i (ReleaseNotesArchive) sağdaki içerik alanında render ediliyor. */}
       <nav className="flex flex-1 flex-col gap-1 p-2">
-        <NavItem icon={History} label="Sürüm Notları" active={false} onClick={onNavigateHome} />
+        <NavItem
+          icon={History}
+          label="Sürüm Notları"
+          active={activeTab === "releaseNotes"}
+          onClick={() => onTabChange("releaseNotes")}
+        />
         <NavItem
           icon={Users}
           label="Kullanıcılar"

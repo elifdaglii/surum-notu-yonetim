@@ -39,13 +39,7 @@ function App() {
   // ADMIN olmayan biri (örn. state manipülasyonuyla) view'u "admin" yapsa bile
   // bu koşul false olduğu için aşağıdaki ana sayfa (arşiv listesi) görünümüne düşer.
   if (view === "admin" && role === "ADMIN") {
-    return (
-      <AdminPage
-        token={token}
-        onNavigateHome={() => setView("home")}
-        onLogout={handleLogout}
-      />
-    );
+    return <AdminPage token={token} onLogout={handleLogout} />;
   }
 
   return (
