@@ -1,5 +1,4 @@
 import { ArrowLeft, LogOut } from "lucide-react";
-import type { Role } from "../types";
 import { getUsernameFromToken } from "../lib/jwt";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,18 +14,18 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 type HomePageProps = {
   token: string;
-  role: Role;
-  onOpenAdmin: () => void;
   onLogout: () => void;
 };
 
 /**
- * USER'ın (ve henüz admin paneline geçmemiş ADMIN'in) gördüğü düz ana sayfa.
+ * USER'ın gördüğü düz ana sayfa. Artık ADMIN buraya hiç düşmüyor - App.tsx role'e göre
+ * doğrudan AdminPage'e yönlendiriyor, bu yüzden burada "role"/"Admin Paneli" linkine
+ * gerek yok (tek tutarlı giriş noktası: ADMIN = AdminPage, USER = HomePage).
  * Sidebar YOK - USER hiçbir zaman sidebar görmemeli. Arşiv listesinin kendisi
  * (filtre/arama/kart grid) artık ReleaseNotesArchive'da; burada sadece bu sayfaya
  * özgü header (geri oku, başlık, tema toggle, ekle butonu, avatar dropdown) var.
  */
-function HomePage({ token, role, onOpenAdmin, onLogout }: HomePageProps) {
+function HomePage({ token, onLogout }: HomePageProps) {
   const username = getUsernameFromToken(token);
   const initial = username.charAt(0).toUpperCase();
 
@@ -56,10 +55,6 @@ function HomePage({ token, role, onOpenAdmin, onLogout }: HomePageProps) {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {/* Admin Paneli linki sadece ADMIN rolüne render ediliyor - route guard mantığıyla aynı. */}
-                {role === "ADMIN" && (
-                  <DropdownMenuItem onClick={onOpenAdmin}>Admin Paneli</DropdownMenuItem>
-                )}
                 <DropdownMenuItem onClick={onLogout}>
                   <LogOut className="size-4" />
                   Çıkış Yap

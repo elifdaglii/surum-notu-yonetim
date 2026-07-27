@@ -4,8 +4,6 @@ import AdminPage from "./pages/AdminPage";
 import HomePage from "./pages/HomePage";
 import type { Role } from "./types";
 
-type View = "home" | "admin";
-
 function App() {
   // Sayfa yenilendiğinde localStorage'daki token ve rol ile giriş durumu korunuyor.
   const [token, setToken] = useState<string | null>(() =>
@@ -14,7 +12,6 @@ function App() {
   const [role, setRole] = useState<Role | null>(
     () => localStorage.getItem("role") as Role | null,
   );
-  const [view, setView] = useState<View>("home");
 
   function handleLoginSuccess(newToken: string, newRole: Role) {
     localStorage.setItem("token", newToken);
@@ -28,28 +25,22 @@ function App() {
     localStorage.removeItem("role");
     setToken(null);
     setRole(null);
-    setView("home");
   }
 
   if (!token || !role) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Route guard: admin görünümü sadece role === "ADMIN" olduğunda render edilir.
-  // ADMIN olmayan biri (örn. state manipülasyonuyla) view'u "admin" yapsa bile
-  // bu koşul false olduğu için aşağıdaki ana sayfa (arşiv listesi) görünümüne düşer.
-  if (view === "admin" && role === "ADMIN") {
+  // Hangi sayfanın render edileceği artık doğrudan role'den türetiliyor, ayrı bir
+  // "view" state'i yok. Önceden view ile role senkron tutulması gerekiyordu (ADMIN
+  // giriş yapınca view="home" kalıyor, sonra ayrı bir tıklamayla view="admin" oluyordu)
+  // - bu da ADMIN'in aynı içeriği iki farklı ekrandan görmesine yol açıyordu. Artık
+  // ADMIN için tek, tutarlı giriş noktası: role === "ADMIN" ise her zaman AdminPage.
+  if (role === "ADMIN") {
     return <AdminPage token={token} onLogout={handleLogout} />;
   }
 
-  return (
-    <HomePage
-      token={token}
-      role={role}
-      onOpenAdmin={() => setView("admin")}
-      onLogout={handleLogout}
-    />
-  );
+  return <HomePage token={token} onLogout={handleLogout} />;
 }
 
 export default App;

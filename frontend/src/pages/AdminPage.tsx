@@ -38,7 +38,9 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
   // ayrı bir isim kullandık.
   const loggedInUsername = getUsernameFromToken(token);
 
-  const [activeTab, setActiveTab] = useState<AdminTab>("users");
+  // Admin paneline girişte varsayılan sekme "Sürüm Notları" - artık tek giriş noktası
+  // burası olduğu için, giriş yapan admin doğrudan arşiv listesini görüyor.
+  const [activeTab, setActiveTab] = useState<AdminTab>("releaseNotes");
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
