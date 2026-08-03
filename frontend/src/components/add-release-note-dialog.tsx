@@ -1,5 +1,7 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { fetchCategories } from "@/api/categories";
 import { createReleaseNote } from "@/api/releaseNotes";
 import type { Category } from "@/types";
@@ -28,11 +30,6 @@ type AddReleaseNoteDialogProps = {
 // pre-release/build metadata (v1.2.0-beta vs.) şimdilik desteklenmiyor.
 const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
 
-// Backend'de contentMarkdown @NotBlank - boş string "" 400 ile reddediliyor. Markdown
-// içerik alanı forma eklenene kadar (SNYS-17/18) bu placeholder gönderiliyor; o adımda
-// gerçek alanın değeriyle değiştirilecek.
-const PLACEHOLDER_CONTENT = "İçerik henüz eklenmedi.";
-
 const SUCCESS_MESSAGE_DURATION_MS = 4000;
 
 function getTodayDateInputValue(): string {
@@ -48,8 +45,8 @@ function getTodayDateInputValue(): string {
  * AdminPage (ADMIN) header'ında aynı şekilde kullanılıyor, bu yüzden tetikleyici
  * buton da bu component'in içinde - çağıran sayfa sadece token'ı geçiyor.
  *
- * Markdown içerik alanı henüz yok - forma ayrı bir adımda (SNYS-17/18) eklenecek,
- * o zamana kadar backend'e sabit bir placeholder metin gönderiliyor (bkz. PLACEHOLDER_CONTENT).
+ * İçerik alanı sol/sağ split görünümde: solda ham Markdown textarea'sı, sağda
+ * marked ile render edilip DOMPurify'dan geçirilmiş canlı önizleme (bkz. previewHtml).
  */
 export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogProps) {
   const [open, setOpen] = useState(false);
@@ -58,6 +55,7 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
   const [versionError, setVersionError] = useState<string | null>(null);
   const [releaseDate, setReleaseDate] = useState(getTodayDateInputValue);
   const [categoryId, setCategoryId] = useState("");
+  const [contentMarkdown, setContentMarkdown] = useState("");
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -66,6 +64,18 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // marked ham Markdown'ı HTML'e çeviriyor, DOMPurify o HTML'i innerHTML olarak
+  // basmadan önce temizliyor (script tag'leri vs. çalıştırılmasın diye - SNYS-20).
+  // İkisi de senkron çalışıyor, bu yüzden her tuş vuruşunda yeniden hesaplamak
+  // (useMemo ile gereksiz tekrarları önleyerek) yeterli, ayrı bir debounce gerekmiyor.
+  const previewHtml = useMemo(() => {
+    if (contentMarkdown.trim() === "") {
+      return "";
+    }
+    const rawHtml = marked.parse(contentMarkdown, { async: false }) as string;
+    return DOMPurify.sanitize(rawHtml);
+  }, [contentMarkdown]);
 
   useEffect(() => {
     loadCategories();
@@ -98,6 +108,7 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
     setVersionError(null);
     setReleaseDate(getTodayDateInputValue());
     setCategoryId("");
+    setContentMarkdown("");
     setSubmitError(null);
   }
 
@@ -139,7 +150,7 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
         version,
         releaseDate,
         categoryId: Number(categoryId),
-        contentMarkdown: PLACEHOLDER_CONTENT,
+        contentMarkdown,
       });
       const savedVersion = version;
       handleOpenChange(false);
@@ -159,7 +170,9 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
           <Button type="button">+ Yeni Sürüm Notu Ekle</Button>
         </DialogTrigger>
 
-        <DialogContent>
+        {/* Varsayılan max-w-md (~448px) sol/sağ split editör+önizleme için çok dar -
+            genişlik override'ı twMerge sayesinde (cn()) taban class'ın yerine geçiyor. */}
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Yeni Sürüm Notu Ekle</DialogTitle>
             <DialogDescription>Yayınlanacak sürüm için bilgileri girin.</DialogDescription>
@@ -234,6 +247,44 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
               {categoryLoadError && (
                 <p className="text-xs text-destructive">{categoryLoadError}</p>
               )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="release-content"
+                className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+              >
+                İçerik
+              </label>
+              {/* Sol/sağ split - üst üste DEĞİL. Sol: ham Markdown yazılan düz textarea
+                  (syntax highlighting yok, bilinçli olarak). Sağ: marked + DOMPurify ile
+                  her tuş vuruşunda yeniden hesaplanan canlı önizleme (bkz. previewHtml). */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">Yaz</span>
+                  <textarea
+                    id="release-content"
+                    value={contentMarkdown}
+                    onChange={(e) => setContentMarkdown(e.target.value)}
+                    required
+                    rows={10}
+                    className="w-full resize-none rounded-lg border border-input bg-transparent p-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">Önizleme</span>
+                  <div
+                    className="h-[15.25rem] overflow-y-auto rounded-lg border border-input bg-muted/30 p-2.5 text-sm [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_h1]:mb-1 [&_h1]:text-base [&_h1]:font-bold [&_h2]:mb-1 [&_h2]:text-sm [&_h2]:font-bold [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_li]:mb-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
+                  >
+                    {previewHtml ? (
+                      <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    ) : (
+                      <p className="text-muted-foreground">Yazdıkça önizleme burada görünecek...</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {submitError && <p className="text-sm text-destructive">{submitError}</p>}
