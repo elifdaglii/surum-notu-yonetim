@@ -53,3 +53,47 @@ export async function createReleaseNote(
 
   return (await response.json()) as ReleaseNote;
 }
+
+type UpdateReleaseNoteInput = CreateReleaseNoteInput;
+
+/**
+ * PUT /api/release-notes/{id} isteği atar. Sadece ADMIN token'ı ile çalışır
+ * (backend'de @PreAuthorize("hasRole('ADMIN')")).
+ */
+export async function updateReleaseNote(
+  token: string,
+  id: number,
+  input: UpdateReleaseNoteInput,
+): Promise<ReleaseNote> {
+  const response = await fetch(`${API_BASE_URL}/api/release-notes/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error("Sürüm notu güncellenemedi. Bilgileri kontrol edin");
+  }
+
+  return (await response.json()) as ReleaseNote;
+}
+
+/**
+ * DELETE /api/release-notes/{id} isteği atar. Sadece ADMIN token'ı ile çalışır
+ * (backend'de @PreAuthorize("hasRole('ADMIN')")).
+ */
+export async function deleteReleaseNote(token: string, id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/release-notes/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Sürüm notu silinemedi");
+  }
+}

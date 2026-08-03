@@ -51,7 +51,7 @@ function HomePage({ token, onLogout }: HomePageProps) {
             <ThemeToggle />
             <AddReleaseNoteDialog
               token={token}
-              onCreated={() => setArchiveReloadSignal((n) => n + 1)}
+              onSaved={() => setArchiveReloadSignal((n) => n + 1)}
             />
 
             <DropdownMenu>

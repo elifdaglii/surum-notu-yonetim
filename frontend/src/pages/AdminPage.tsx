@@ -166,11 +166,11 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
               <h1 className="text-xl font-bold text-foreground">Geçmiş Sürüm Notları</h1>
               <AddReleaseNoteDialog
                 token={token}
-                onCreated={() => setArchiveReloadSignal((n) => n + 1)}
+                onSaved={() => setArchiveReloadSignal((n) => n + 1)}
               />
             </div>
 
-            <ReleaseNotesArchive token={token} reloadSignal={archiveReloadSignal} />
+            <ReleaseNotesArchive token={token} reloadSignal={archiveReloadSignal} canManage />
           </div>
         )}
 

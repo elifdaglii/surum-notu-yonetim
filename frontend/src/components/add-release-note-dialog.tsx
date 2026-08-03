@@ -3,8 +3,8 @@ import { CheckCircle2 } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { fetchCategories } from "@/api/categories";
-import { createReleaseNote } from "@/api/releaseNotes";
-import type { Category } from "@/types";
+import { createReleaseNote, updateReleaseNote } from "@/api/releaseNotes";
+import type { Category, ReleaseNote } from "@/types";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,9 +21,17 @@ import { Input } from "@/components/ui/input";
 
 type AddReleaseNoteDialogProps = {
   token: string;
-  // Kaydetme başarılı olduğunda çağrılıyor - çağıran sayfa bunu ReleaseNotesArchive'ı
-  // yenilemek (reloadSignal'i artırmak) için kullanıyor.
-  onCreated?: () => void;
+  // Kaydetme/güncelleme başarılı olduğunda çağrılıyor - çağıran sayfa bunu
+  // ReleaseNotesArchive'ı yenilemek (reloadSignal'i artırmak) için kullanıyor.
+  onSaved?: () => void;
+  // "create" (varsayılan): kendi "+ Yeni Sürüm Notu Ekle" tetikleyici butonunu render eder,
+  // açık/kapalı state'ini kendi içinde tutar. "edit": tetikleyici butonu YOK, dışarıdan
+  // (ReleaseNoteDetailDialog'daki "Düzenle" butonu) open/onOpenChange ile kontrol edilir
+  // ve formu `note`nun mevcut değerleriyle önceden doldurur.
+  mode?: "create" | "edit";
+  note?: ReleaseNote;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 // SemVer'in "v" önekli hali bekleniyor: v1.2.0, v0.10.3 gibi. Sadece major.minor.patch,
@@ -45,11 +53,27 @@ function getTodayDateInputValue(): string {
  * AdminPage (ADMIN) header'ında aynı şekilde kullanılıyor, bu yüzden tetikleyici
  * buton da bu component'in içinde - çağıran sayfa sadece token'ı geçiyor.
  *
+ * Aynı form, `mode="edit"` ile ReleaseNotesArchive tarafından (detay modalındaki
+ * "Düzenle" butonu üzerinden) dışarıdan kontrollü şekilde de açılıyor - ayrı bir
+ * component yazmak yerine başlık/buton metni/istek (POST vs PUT) mode'a göre değişiyor.
+ *
  * İçerik alanı sol/sağ split görünümde: solda ham Markdown textarea'sı, sağda
  * marked ile render edilip DOMPurify'dan geçirilmiş canlı önizleme (bkz. previewHtml).
  */
-export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddReleaseNoteDialog({
+  token,
+  onSaved,
+  mode = "create",
+  note,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+}: AddReleaseNoteDialogProps) {
+  const isEdit = mode === "edit";
+
+  // "edit" modunda open/onOpenChange her zaman dışarıdan (ReleaseNotesArchive) geliyor;
+  // "create" modunda kendi iç state'ini + tetikleyici butonunu kullanıyor.
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
 
   const [version, setVersion] = useState("");
   const [versionError, setVersionError] = useState<string | null>(null);
@@ -80,6 +104,18 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
   useEffect(() => {
     loadCategories();
   }, []);
+
+  // "edit" modunda modal açıldığında formu düzenlenen notun mevcut değerleriyle doldur.
+  useEffect(() => {
+    if (open && isEdit && note) {
+      setVersion(note.version);
+      setVersionError(null);
+      setReleaseDate(note.releaseDate);
+      setCategoryId(note.category ? String(note.category.id) : "");
+      setContentMarkdown(note.contentMarkdown);
+      setSubmitError(null);
+    }
+  }, [open, isEdit, note]);
 
   // Başarı mesajı birkaç saniye sonra kendiliğinden kayboluyor (kapanan modalın
   // arkasında sonsuza kadar durmasın diye).
@@ -113,7 +149,8 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
   }
 
   function handleOpenChange(nextOpen: boolean) {
-    setOpen(nextOpen);
+    setInternalOpen(nextOpen);
+    setControlledOpen?.(nextOpen);
     if (!nextOpen) {
       resetForm();
     }
@@ -146,16 +183,23 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
     setSubmitError(null);
     setSubmitting(true);
     try {
-      await createReleaseNote(token, {
+      const input = {
         version,
         releaseDate,
         categoryId: Number(categoryId),
         contentMarkdown,
-      });
+      };
+
+      if (isEdit) {
+        await updateReleaseNote(token, note!.id, input);
+      } else {
+        await createReleaseNote(token, input);
+      }
+
       const savedVersion = version;
       handleOpenChange(false);
-      setSuccessMessage(`${savedVersion} sürüm notu kaydedildi.`);
-      onCreated?.();
+      setSuccessMessage(isEdit ? `${savedVersion} güncellendi.` : `${savedVersion} sürüm notu kaydedildi.`);
+      onSaved?.();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {
@@ -166,16 +210,20 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger asChild>
-          <Button type="button">+ Yeni Sürüm Notu Ekle</Button>
-        </DialogTrigger>
+        {!isEdit && (
+          <DialogTrigger asChild>
+            <Button type="button">+ Yeni Sürüm Notu Ekle</Button>
+          </DialogTrigger>
+        )}
 
         {/* Varsayılan max-w-md (~448px) sol/sağ split editör+önizleme için çok dar -
             genişlik override'ı twMerge sayesinde (cn()) taban class'ın yerine geçiyor. */}
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Yeni Sürüm Notu Ekle</DialogTitle>
-            <DialogDescription>Yayınlanacak sürüm için bilgileri girin.</DialogDescription>
+            <DialogTitle>{isEdit ? "Sürüm Notunu Düzenle" : "Yeni Sürüm Notu Ekle"}</DialogTitle>
+            <DialogDescription>
+              {isEdit ? "Sürüm notu bilgilerini güncelleyin." : "Yayınlanacak sürüm için bilgileri girin."}
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -296,7 +344,7 @@ export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogP
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={submitting || loadingCategories || categories.length === 0}>
-                {submitting ? "Kaydediliyor..." : "Kaydet"}
+                {submitting ? (isEdit ? "Güncelleniyor..." : "Kaydediliyor...") : isEdit ? "Güncelle" : "Kaydet"}
               </Button>
             </DialogFooter>
           </form>

@@ -56,21 +56,42 @@ public class ReleaseNoteService {
         User creator = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Giris yapan kullanici bulunamadi: " + currentUsername));
 
-        Category category = null;
-        if (request.categoryId() != null) {
-            category = categoryRepository.findById(request.categoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadi: " + request.categoryId()));
-        }
-
         ReleaseNote note = ReleaseNote.builder()
                 .version(request.version())
                 .releaseDate(request.releaseDate())
                 .contentMarkdown(sanitize(request.contentMarkdown()))
-                .category(category)
+                .category(resolveCategory(request.categoryId()))
                 .createdBy(creator)
                 .build();
 
         return toResponse(releaseNoteRepository.save(note));
+    }
+
+    public ReleaseNoteResponse update(Long id, ReleaseNoteRequest request) {
+        ReleaseNote note = releaseNoteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Surum notu bulunamadi: " + id));
+
+        note.setVersion(request.version());
+        note.setReleaseDate(request.releaseDate());
+        note.setContentMarkdown(sanitize(request.contentMarkdown()));
+        note.setCategory(resolveCategory(request.categoryId()));
+
+        return toResponse(releaseNoteRepository.save(note));
+    }
+
+    public void delete(Long id) {
+        if (!releaseNoteRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Surum notu bulunamadi: " + id);
+        }
+        releaseNoteRepository.deleteById(id);
+    }
+
+    private Category resolveCategory(Long categoryId) {
+        if (categoryId == null) {
+            return null;
+        }
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadi: " + categoryId));
     }
 
     private String sanitize(String rawContent) {

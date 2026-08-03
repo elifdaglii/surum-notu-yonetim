@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileCode, FileDown, Search } from "lucide-react";
-import type { VariantProps } from "class-variance-authority";
 import { fetchReleaseNotes } from "@/api/releaseNotes";
+import { categoryBadgeVariant, formatReleaseDate } from "@/lib/release-notes";
 import type { ReleaseNote } from "@/types";
 
-import { Badge, type badgeVariants } from "@/components/ui/badge";
+import { AddReleaseNoteDialog } from "@/components/add-release-note-dialog";
+import { ReleaseNoteDetailDialog } from "@/components/release-note-detail-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +17,10 @@ type ReleaseNotesArchiveProps = {
   // Filtre/arama state'ini korumak için component'i remount etmek yerine (key prop)
   // bunu bir useEffect bağımlılığı olarak kullanıyoruz.
   reloadSignal?: number;
+  // true ise (ADMIN) detay modalında Düzenle/Sil butonları görünür. USER için false -
+  // PUT/DELETE zaten backend'de @PreAuthorize("hasRole('ADMIN')") ile korunuyor,
+  // burada sadece USER'a işlevsiz butonlar gösterilmesin diye gizliyoruz.
+  canManage?: boolean;
 };
 
 // Uygulamanın sabit üç kategorisi (yeni özellik / hata çözümü / altyapı temizliği).
@@ -26,23 +32,6 @@ const CATEGORY_FILTERS: { label: string; dotClassName: string }[] = [
   { label: "Hata Çözümü", dotClassName: "bg-destructive" },
   { label: "Altyapı", dotClassName: "bg-primary" },
 ];
-
-type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];
-
-function categoryBadgeVariant(categoryName: string): BadgeVariant {
-  if (categoryName === "Özellik") return "feature";
-  if (categoryName === "Hata Çözümü") return "bugfix";
-  if (categoryName === "Altyapı") return "chore";
-  return "outline";
-}
-
-function formatReleaseDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
 
 // contentMarkdown düz bir metin/markdown alanı - veri modelimizde ayrı bir "özet" alanı yok.
 // Kart önizlemesi için: boş satırları at, madde işareti/numara/başlık işaretlerini temizle,
@@ -63,13 +52,19 @@ function getPreviewLines(markdown: string, maxLines = 3): string[] {
  * geri oku, tema toggle, avatar vs.) her iki bağlamda farklı olduğu için bu component'in
  * dışında, çağıran sayfada kalıyor.
  */
-export function ReleaseNotesArchive({ token, reloadSignal }: ReleaseNotesArchiveProps) {
+export function ReleaseNotesArchive({ token, reloadSignal, canManage = false }: ReleaseNotesArchiveProps) {
   const [notes, setNotes] = useState<ReleaseNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Detay modalında gösterilen not (kart tıklanınca set edilir, null ise modal kapalı).
+  const [selectedNote, setSelectedNote] = useState<ReleaseNote | null>(null);
+  // "Düzenle"ye basılınca detay modalı kapanıp bu doluyor - AddReleaseNoteDialog'u
+  // edit modunda, bu notun değerleriyle önceden dolu açıyor.
+  const [editingNote, setEditingNote] = useState<ReleaseNote | null>(null);
 
   useEffect(() => {
     loadNotes();
@@ -166,14 +161,37 @@ export function ReleaseNotesArchive({ token, reloadSignal }: ReleaseNotesArchive
           {filteredNotes.map((note) => (
             <Card
               key={note.id}
-              className="group relative border-l-2 border-l-transparent transition-colors hover:border-l-primary hover:bg-muted/30"
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedNote(note)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedNote(note);
+                }
+              }}
+              className="group relative cursor-pointer border-l-2 border-l-transparent transition-colors hover:border-l-primary hover:bg-muted/30"
             >
-              {/* PDF/HTML indirme ikonları - şimdilik işlevsiz, her zaman görünür. */}
+              {/* PDF/HTML indirme ikonları - şimdilik işlevsiz, her zaman görünür.
+                  stopPropagation: tıklanınca kartın onClick'i (detay modalını açan)
+                  tetiklenmesin. */}
               <div className="absolute top-3 right-3 flex gap-1">
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="PDF indir">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="PDF indir"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <FileDown className="size-3.5" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="HTML indir">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="HTML indir"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <FileCode className="size-3.5" />
                 </Button>
               </div>
@@ -207,6 +225,38 @@ export function ReleaseNotesArchive({ token, reloadSignal }: ReleaseNotesArchive
           ))}
         </div>
       )}
+
+      <ReleaseNoteDetailDialog
+        token={token}
+        note={selectedNote}
+        open={selectedNote !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedNote(null);
+        }}
+        canManage={canManage}
+        onEditRequested={(note) => {
+          setSelectedNote(null);
+          setEditingNote(note);
+        }}
+        onDeleted={() => {
+          setSelectedNote(null);
+          loadNotes();
+        }}
+      />
+
+      <AddReleaseNoteDialog
+        token={token}
+        mode="edit"
+        note={editingNote ?? undefined}
+        open={editingNote !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingNote(null);
+        }}
+        onSaved={() => {
+          setEditingNote(null);
+          loadNotes();
+        }}
+      />
     </div>
   );
 }
