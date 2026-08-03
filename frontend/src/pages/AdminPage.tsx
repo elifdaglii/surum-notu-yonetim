@@ -5,6 +5,7 @@ import { createCategory, fetchCategories } from "../api/categories";
 import type { AppUser, Category, Role } from "../types";
 
 import { getUsernameFromToken } from "@/lib/jwt";
+import { AddReleaseNoteDialog } from "@/components/add-release-note-dialog";
 import { AdminSidebar, type AdminTab } from "@/components/admin-sidebar";
 import { ReleaseNotesArchive } from "@/components/release-notes-archive";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,10 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
   // Admin paneline girişte varsayılan sekme "Sürüm Notları" - artık tek giriş noktası
   // burası olduğu için, giriş yapan admin doğrudan arşiv listesini görüyor.
   const [activeTab, setActiveTab] = useState<AdminTab>("releaseNotes");
+
+  // Yeni bir sürüm notu kaydedildiğinde ReleaseNotesArchive'ı yeniden çektirmek için
+  // artırılıyor (bkz. ReleaseNotesArchive'ın reloadSignal prop'u).
+  const [archiveReloadSignal, setArchiveReloadSignal] = useState(0);
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -159,11 +164,13 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                 sadece başlık + "+ Ekle" butonu. Arama/filtre/kart grid ReleaseNotesArchive'ın içinde. */}
             <div className="flex items-center justify-between gap-3">
               <h1 className="text-xl font-bold text-foreground">Geçmiş Sürüm Notları</h1>
-              {/* Şimdilik tıklanınca bir şey yapmıyor - içerik ekleme akışı ayrı bir adımda gelecek. */}
-              <Button type="button">+ Yeni Sürüm Notu Ekle</Button>
+              <AddReleaseNoteDialog
+                token={token}
+                onCreated={() => setArchiveReloadSignal((n) => n + 1)}
+              />
             </div>
 
-            <ReleaseNotesArchive token={token} />
+            <ReleaseNotesArchive token={token} reloadSignal={archiveReloadSignal} />
           </div>
         )}
 

@@ -1,0 +1,266 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { CheckCircle2 } from "lucide-react";
+import { fetchCategories } from "@/api/categories";
+import { createReleaseNote } from "@/api/releaseNotes";
+import type { Category } from "@/types";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+
+type AddReleaseNoteDialogProps = {
+  token: string;
+  // Kaydetme başarılı olduğunda çağrılıyor - çağıran sayfa bunu ReleaseNotesArchive'ı
+  // yenilemek (reloadSignal'i artırmak) için kullanıyor.
+  onCreated?: () => void;
+};
+
+// SemVer'in "v" önekli hali bekleniyor: v1.2.0, v0.10.3 gibi. Sadece major.minor.patch,
+// pre-release/build metadata (v1.2.0-beta vs.) şimdilik desteklenmiyor.
+const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
+
+// Backend'de contentMarkdown @NotBlank - boş string "" 400 ile reddediliyor. Markdown
+// içerik alanı forma eklenene kadar (SNYS-17/18) bu placeholder gönderiliyor; o adımda
+// gerçek alanın değeriyle değiştirilecek.
+const PLACEHOLDER_CONTENT = "İçerik henüz eklenmedi.";
+
+const SUCCESS_MESSAGE_DURATION_MS = 4000;
+
+function getTodayDateInputValue(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * "+ Yeni Sürüm Notu Ekle" butonu + açtığı modal form. Hem HomePage (USER) hem
+ * AdminPage (ADMIN) header'ında aynı şekilde kullanılıyor, bu yüzden tetikleyici
+ * buton da bu component'in içinde - çağıran sayfa sadece token'ı geçiyor.
+ *
+ * Markdown içerik alanı henüz yok - forma ayrı bir adımda (SNYS-17/18) eklenecek,
+ * o zamana kadar backend'e sabit bir placeholder metin gönderiliyor (bkz. PLACEHOLDER_CONTENT).
+ */
+export function AddReleaseNoteDialog({ token, onCreated }: AddReleaseNoteDialogProps) {
+  const [open, setOpen] = useState(false);
+
+  const [version, setVersion] = useState("");
+  const [versionError, setVersionError] = useState<string | null>(null);
+  const [releaseDate, setReleaseDate] = useState(getTodayDateInputValue);
+  const [categoryId, setCategoryId] = useState("");
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [categoryLoadError, setCategoryLoadError] = useState<string | null>(null);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Başarı mesajı birkaç saniye sonra kendiliğinden kayboluyor (kapanan modalın
+  // arkasında sonsuza kadar durmasın diye).
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+    const timer = setTimeout(() => setSuccessMessage(null), SUCCESS_MESSAGE_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
+  async function loadCategories() {
+    setLoadingCategories(true);
+    setCategoryLoadError(null);
+    try {
+      setCategories(await fetchCategories(token));
+    } catch (err) {
+      setCategoryLoadError(err instanceof Error ? err.message : "Bir hata oluştu");
+    } finally {
+      setLoadingCategories(false);
+    }
+  }
+
+  function resetForm() {
+    setVersion("");
+    setVersionError(null);
+    setReleaseDate(getTodayDateInputValue());
+    setCategoryId("");
+    setSubmitError(null);
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      resetForm();
+    }
+  }
+
+  // Boş/dokunulmamış alanda format hatası GÖSTERMİYORUZ - sadece kullanıcı bir şey
+  // yazıp alandan çıktığında ya da kaydet'e bastığında. Bu önemli: Radix Dialog
+  // açılışta ilk odaklanabilir elemana (bu input'a) otomatik focus veriyor; kullanıcı
+  // hiç yazmadan başka bir alana geçerse input blur oluyor ve boş değerle çağrılıyor -
+  // o durumda regex zaten eşleşmeyeceği için hatalı şekilde format hatası çıkıyordu.
+  // Zorunluluk (boş bırakılamaz) kontrolü zaten native "required" attribute'unda var.
+  function validateVersion(value: string): boolean {
+    if (value.trim() === "") {
+      setVersionError(null);
+      return false;
+    }
+    const isValid = VERSION_PATTERN.test(value);
+    setVersionError(isValid ? null : "Lütfen vX.X.X formatında yazın");
+    return isValid;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const isVersionValid = validateVersion(version);
+    if (!isVersionValid) {
+      return;
+    }
+
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      await createReleaseNote(token, {
+        version,
+        releaseDate,
+        categoryId: Number(categoryId),
+        contentMarkdown: PLACEHOLDER_CONTENT,
+      });
+      const savedVersion = version;
+      handleOpenChange(false);
+      setSuccessMessage(`${savedVersion} sürüm notu kaydedildi.`);
+      onCreated?.();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Bir hata oluştu");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button type="button">+ Yeni Sürüm Notu Ekle</Button>
+        </DialogTrigger>
+
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Yeni Sürüm Notu Ekle</DialogTitle>
+            <DialogDescription>Yayınlanacak sürüm için bilgileri girin.</DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="release-version"
+                className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+              >
+                Sürüm Numarası
+              </label>
+              <Input
+                id="release-version"
+                type="text"
+                placeholder="v1.2.0"
+                value={version}
+                onChange={(e) => {
+                  setVersion(e.target.value);
+                  if (versionError) {
+                    setVersionError(null);
+                  }
+                }}
+                onBlur={(e) => validateVersion(e.target.value)}
+                aria-invalid={versionError !== null}
+                required
+              />
+              {versionError && <p className="text-xs text-destructive">{versionError}</p>}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="release-date"
+                className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+              >
+                Yayınlanma Tarihi
+              </label>
+              <Input
+                id="release-date"
+                type="date"
+                value={releaseDate}
+                onChange={(e) => setReleaseDate(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="release-category"
+                className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+              >
+                Kategori
+              </label>
+              <select
+                id="release-category"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                disabled={loadingCategories || categories.length === 0}
+                required
+                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+              >
+                <option value="" disabled>
+                  {loadingCategories ? "Yükleniyor..." : "Kategori seçin"}
+                </option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              {categoryLoadError && (
+                <p className="text-xs text-destructive">{categoryLoadError}</p>
+              )}
+            </div>
+
+            {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline" disabled={submitting}>
+                  İptal
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={submitting || loadingCategories || categories.length === 0}>
+                {submitting ? "Kaydediliyor..." : "Kaydet"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {successMessage && (
+        <div
+          role="status"
+          className="fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-lg bg-card px-4 py-3 text-sm text-card-foreground ring-1 ring-foreground/10 shadow-lg"
+        >
+          <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" />
+          {successMessage}
+        </div>
+      )}
+    </>
+  );
+}

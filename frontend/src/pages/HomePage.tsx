@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { getUsernameFromToken } from "../lib/jwt";
 
+import { AddReleaseNoteDialog } from "@/components/add-release-note-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +31,10 @@ function HomePage({ token, onLogout }: HomePageProps) {
   const username = getUsernameFromToken(token);
   const initial = username.charAt(0).toUpperCase();
 
+  // Yeni bir sürüm notu kaydedildiğinde ReleaseNotesArchive'ı yeniden çektirmek için
+  // artırılıyor (bkz. ReleaseNotesArchive'ın reloadSignal prop'u).
+  const [archiveReloadSignal, setArchiveReloadSignal] = useState(0);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-card">
@@ -43,8 +49,10 @@ function HomePage({ token, onLogout }: HomePageProps) {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            {/* Şimdilik tıklanınca bir şey yapmıyor - içerik ekleme akışı ayrı bir adımda gelecek. */}
-            <Button type="button">+ Yeni Sürüm Notu Ekle</Button>
+            <AddReleaseNoteDialog
+              token={token}
+              onCreated={() => setArchiveReloadSignal((n) => n + 1)}
+            />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -66,7 +74,7 @@ function HomePage({ token, onLogout }: HomePageProps) {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <ReleaseNotesArchive token={token} />
+        <ReleaseNotesArchive token={token} reloadSignal={archiveReloadSignal} />
       </main>
     </div>
   );

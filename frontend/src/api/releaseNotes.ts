@@ -20,3 +20,36 @@ export async function fetchReleaseNotes(token: string): Promise<ReleaseNote[]> {
 
   return (await response.json()) as ReleaseNote[];
 }
+
+type CreateReleaseNoteInput = {
+  version: string;
+  // "yyyy-MM-dd" (backend LocalDate olarak bekliyor, <input type="date"> zaten bu formatta).
+  releaseDate: string;
+  contentMarkdown: string;
+  categoryId: number;
+};
+
+/**
+ * POST /api/release-notes isteği atar. Backend'de contentMarkdown @NotBlank -
+ * boş/whitespace-only string 400 ile reddediliyor, bu yüzden markdown alanı
+ * forma eklenene kadar (SNYS-17/18) çağıran taraf placeholder bir metin geçmeli.
+ */
+export async function createReleaseNote(
+  token: string,
+  input: CreateReleaseNoteInput,
+): Promise<ReleaseNote> {
+  const response = await fetch(`${API_BASE_URL}/api/release-notes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error("Sürüm notu kaydedilemedi. Bilgileri kontrol edin");
+  }
+
+  return (await response.json()) as ReleaseNote;
+}

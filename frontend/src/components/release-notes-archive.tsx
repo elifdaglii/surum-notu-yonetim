@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input";
 
 type ReleaseNotesArchiveProps = {
   token: string;
+  // Değiştiğinde (örn. yeni bir sürüm notu kaydedildiğinde) listeyi yeniden çeker.
+  // Filtre/arama state'ini korumak için component'i remount etmek yerine (key prop)
+  // bunu bir useEffect bağımlılığı olarak kullanıyoruz.
+  reloadSignal?: number;
 };
 
 // Uygulamanın sabit üç kategorisi (yeni özellik / hata çözümü / altyapı temizliği).
@@ -59,7 +63,7 @@ function getPreviewLines(markdown: string, maxLines = 3): string[] {
  * geri oku, tema toggle, avatar vs.) her iki bağlamda farklı olduğu için bu component'in
  * dışında, çağıran sayfada kalıyor.
  */
-export function ReleaseNotesArchive({ token }: ReleaseNotesArchiveProps) {
+export function ReleaseNotesArchive({ token, reloadSignal }: ReleaseNotesArchiveProps) {
   const [notes, setNotes] = useState<ReleaseNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +73,7 @@ export function ReleaseNotesArchive({ token }: ReleaseNotesArchiveProps) {
 
   useEffect(() => {
     loadNotes();
-  }, []);
+  }, [reloadSignal]);
 
   async function loadNotes() {
     setLoading(true);
