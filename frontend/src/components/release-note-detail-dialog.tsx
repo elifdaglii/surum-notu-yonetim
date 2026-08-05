@@ -3,7 +3,7 @@ import { CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { deleteReleaseNote } from "@/api/releaseNotes";
-import { categoryBadgeVariant, formatReleaseDate } from "@/lib/release-notes";
+import { getCategoryColor, formatReleaseDate } from "@/lib/release-notes";
 import type { ReleaseNote } from "@/types";
 
 import { Badge } from "@/components/ui/badge";
@@ -113,7 +113,7 @@ export function ReleaseNoteDetailDialog({
 
               {note.category && (
                 <div>
-                  <Badge variant={categoryBadgeVariant(note.category.name)}>
+                  <Badge variant="outline" className={getCategoryColor(note.category.name).badgeClassName}>
                     {note.category.name}
                   </Badge>
                 </div>
@@ -172,8 +172,8 @@ export function ReleaseNoteDetailDialog({
             {/* Not: token tablosundaki --destructive koyu temada AÇIK somon tonuna dönüyor
                 (sadece hover/metin rengi için tasarlanmış, dolu buton zemini için değil -
                 bkz. index.css). Beyaz yazıyla birlikte koyu temada okunaksız olurdu, bu
-                yüzden burada bilinçli olarak sabit bir kırmızı kullanıyoruz (CATEGORY_FILTERS'daki
-                "bg-green-500" gibi, bu kod tabanında token dışı sabit renk kullanımı zaten var). */}
+                yüzden burada bilinçli olarak sabit bir kırmızı kullanıyoruz (lib/release-notes.ts'teki
+                kategori renk paleti gibi, bu kod tabanında token dışı sabit renk kullanımı zaten var). */}
             <Button
               type="button"
               onClick={handleConfirmDelete}

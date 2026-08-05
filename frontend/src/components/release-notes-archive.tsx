@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileCode, FileDown, Search } from "lucide-react";
+import { fetchCategories } from "@/api/categories";
 import { fetchReleaseNotes } from "@/api/releaseNotes";
-import { categoryBadgeVariant, formatReleaseDate } from "@/lib/release-notes";
-import type { ReleaseNote, Role } from "@/types";
+import { getCategoryColor, formatReleaseDate } from "@/lib/release-notes";
+import type { Category, ReleaseNote, Role } from "@/types";
 
 import { AddReleaseNoteDialog } from "@/components/add-release-note-dialog";
 import { ReleaseNoteDetailDialog } from "@/components/release-note-detail-dialog";
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type ReleaseNotesArchiveProps = {
   token: string;
@@ -26,16 +28,6 @@ type ReleaseNotesArchiveProps = {
   role: Role;
   currentUsername: string;
 };
-
-// Uygulamanın sabit üç kategorisi (yeni özellik / hata çözümü / altyapı temizliği).
-// Category entity'miz aslında serbest metin (admin panelinden herhangi bir isimle
-// oluşturulabiliyor); bu üçü dışında bir kategori adı gelirse (örn. eski test verisi)
-// filtre pillerinde karşılığı olmaz ama "Tümü" içinde yine görünür.
-const CATEGORY_FILTERS: { label: string; dotClassName: string }[] = [
-  { label: "Özellik", dotClassName: "bg-green-500" },
-  { label: "Hata Çözümü", dotClassName: "bg-destructive" },
-  { label: "Altyapı", dotClassName: "bg-primary" },
-];
 
 // contentMarkdown düz bir metin/markdown alanı - veri modelimizde ayrı bir "özet" alanı yok.
 // Kart önizlemesi için: boş satırları at, madde işareti/numara/başlık işaretlerini temizle,
@@ -61,6 +53,12 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Filtre pilleri artık sabit değil, admin panelindeki kategori listesinden geliyor -
+  // admin yeni bir kategori eklediğinde bu component yeniden mount olduğunda (örn. sekme
+  // değişince) otomatik görünür. Çekilemezse sessizce boş kalır, "Tümü" pili her zaman
+  // çalışmaya devam eder.
+  const [categories, setCategories] = useState<Category[]>([]);
+
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -73,6 +71,12 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
   useEffect(() => {
     loadNotes();
   }, [reloadSignal]);
+
+  useEffect(() => {
+    fetchCategories(token)
+      .then(setCategories)
+      .catch(() => setCategories([]));
+  }, [token]);
 
   async function loadNotes() {
     setLoading(true);
@@ -116,19 +120,19 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
           >
             Tümü
           </button>
-          {CATEGORY_FILTERS.map((filter) => (
+          {categories.map((category) => (
             <button
-              key={filter.label}
+              key={category.id}
               type="button"
-              onClick={() => setActiveFilter(filter.label)}
+              onClick={() => setActiveFilter(category.name)}
               className={
-                activeFilter === filter.label
+                activeFilter === category.name
                   ? "flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-sm font-medium text-primary-foreground"
                   : "flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground hover:bg-muted"
               }
             >
-              <span className={`size-2 rounded-full ${filter.dotClassName}`} />
-              {filter.label}
+              <span className={`size-2 rounded-full ${getCategoryColor(category.name).dotClassName}`} />
+              {category.name}
             </button>
           ))}
         </div>
@@ -174,7 +178,12 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
                   setSelectedNote(note);
                 }
               }}
-              className="group relative cursor-pointer border-l-2 border-l-transparent transition-colors hover:border-l-primary hover:bg-muted/30"
+              className={cn(
+                "group relative cursor-pointer border-l-2 border-l-transparent transition-colors hover:bg-muted/30",
+                note.category
+                  ? getCategoryColor(note.category.name).hoverBorderClassName
+                  : "hover:border-l-primary"
+              )}
             >
               {/* PDF/HTML indirme ikonları - şimdilik işlevsiz, her zaman görünür.
                   stopPropagation: tıklanınca kartın onClick'i (detay modalını açan)
@@ -210,7 +219,7 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
 
                 {note.category && (
                   <div>
-                    <Badge variant={categoryBadgeVariant(note.category.name)}>
+                    <Badge variant="outline" className={getCategoryColor(note.category.name).badgeClassName}>
                       {note.category.name}
                     </Badge>
                   </div>
