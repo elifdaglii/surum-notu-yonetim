@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,15 +54,14 @@ public class ReleaseNoteController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ReleaseNoteResponse update(@PathVariable Long id, @Valid @RequestBody ReleaseNoteRequest request) {
-        return releaseNoteService.update(id, request);
+    public ReleaseNoteResponse update(@PathVariable Long id, @Valid @RequestBody ReleaseNoteRequest request,
+                                       Principal principal) {
+        return releaseNoteService.update(id, request, principal.getName());
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        releaseNoteService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, Principal principal) {
+        releaseNoteService.delete(id, principal.getName());
         return ResponseEntity.noContent().build();
     }
 }

@@ -170,7 +170,12 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
               />
             </div>
 
-            <ReleaseNotesArchive token={token} reloadSignal={archiveReloadSignal} canManage />
+            <ReleaseNotesArchive
+              token={token}
+              reloadSignal={archiveReloadSignal}
+              role="ADMIN"
+              currentUsername={loggedInUsername}
+            />
           </div>
         )}
 

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import com.surumnotu.backend.dto.CategoryResponse;
@@ -11,6 +12,7 @@ import com.surumnotu.backend.dto.ReleaseNoteRequest;
 import com.surumnotu.backend.dto.ReleaseNoteResponse;
 import com.surumnotu.backend.entity.Category;
 import com.surumnotu.backend.entity.ReleaseNote;
+import com.surumnotu.backend.entity.Role;
 import com.surumnotu.backend.entity.User;
 import com.surumnotu.backend.repository.CategoryRepository;
 import com.surumnotu.backend.repository.ReleaseNoteRepository;
@@ -67,9 +69,11 @@ public class ReleaseNoteService {
         return toResponse(releaseNoteRepository.save(note));
     }
 
-    public ReleaseNoteResponse update(Long id, ReleaseNoteRequest request) {
+    public ReleaseNoteResponse update(Long id, ReleaseNoteRequest request, String currentUsername) {
         ReleaseNote note = releaseNoteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Surum notu bulunamadi: " + id));
+
+        assertCanManage(note, currentUsername);
 
         note.setVersion(request.version());
         note.setReleaseDate(request.releaseDate());
@@ -79,11 +83,32 @@ public class ReleaseNoteService {
         return toResponse(releaseNoteRepository.save(note));
     }
 
-    public void delete(Long id) {
-        if (!releaseNoteRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Surum notu bulunamadi: " + id);
+    public void delete(Long id, String currentUsername) {
+        ReleaseNote note = releaseNoteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Surum notu bulunamadi: " + id));
+
+        assertCanManage(note, currentUsername);
+
+        releaseNoteRepository.delete(note);
+    }
+
+    // ADMIN her zaman izinli; USER sadece notu kendisi olusturduysa (createdBy kendi
+    // kullanicisiyla eslesiyorsa) izinli. Eslesmezse (ya da createdBy null ise - sahibi
+    // belirsiz eski kayitlar) 403 donuyor.
+    private void assertCanManage(ReleaseNote note, String currentUsername) {
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Giris yapan kullanici bulunamadi: " + currentUsername));
+
+        if (currentUser.getRole() == Role.ADMIN) {
+            return;
         }
-        releaseNoteRepository.deleteById(id);
+
+        boolean isOwner = note.getCreatedBy() != null
+                && note.getCreatedBy().getId().equals(currentUser.getId());
+
+        if (!isOwner) {
+            throw new AccessDeniedException("Bu surum notunu duzenleme/silme yetkiniz yok");
+        }
     }
 
     private Category resolveCategory(Long categoryId) {

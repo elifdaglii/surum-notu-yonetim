@@ -24,9 +24,11 @@ type ReleaseNoteDetailDialogProps = {
   note: ReleaseNote | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // true ise (ADMIN) Düzenle/Sil butonları görünür. USER için false - PUT/DELETE zaten
-  // backend'de @PreAuthorize("hasRole('ADMIN')") ile korunuyor, burada sadece USER'a
-  // işlevsiz butonlar gösterilmesin diye gizliyoruz.
+  // true ise Düzenle/Sil butonları görünür: ADMIN her zaman, USER sadece bu notun
+  // sahibiyse (bkz. ReleaseNotesArchive - role === "ADMIN" || note.createdByUsername
+  // === currentUsername). Backend PUT/DELETE'te aynı kuralı zaten uyguluyor, burada
+  // sadece yetkisiz kullanıcıya 403 ile sonuçlanacak butonlar gösterilmesin diye
+  // aynı mantığı tekrarlıyoruz.
   canManage: boolean;
   // "Düzenle"ye basılınca çağrılıyor - çağıran taraf (ReleaseNotesArchive) bu modalı
   // kapatıp AddReleaseNoteDialog'u edit modunda bu notla açıyor.
@@ -39,8 +41,9 @@ const SUCCESS_MESSAGE_DURATION_MS = 4000;
 
 /**
  * Karta tıklayınca açılan sürüm notu detay modalı: tam içerik (markdown render edilmiş
- * hâliyle) + ADMIN için Düzenle/Sil aksiyonları. "Sil" tek tıkla silmiyor, ayrı küçük bir
- * onay dialog'u açıyor (gerçek versiyon numarasını göstererek).
+ * hâliyle) + yetkili kullanıcı için (ADMIN ya da notun sahibi) Düzenle/Sil aksiyonları.
+ * "Sil" tek tıkla silmiyor, ayrı küçük bir onay dialog'u açıyor (gerçek versiyon
+ * numarasını göstererek).
  */
 export function ReleaseNoteDetailDialog({
   token,

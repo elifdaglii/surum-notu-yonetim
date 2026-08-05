@@ -74,7 +74,12 @@ function HomePage({ token, onLogout }: HomePageProps) {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <ReleaseNotesArchive token={token} reloadSignal={archiveReloadSignal} />
+        <ReleaseNotesArchive
+          token={token}
+          reloadSignal={archiveReloadSignal}
+          role="USER"
+          currentUsername={username}
+        />
       </main>
     </div>
   );

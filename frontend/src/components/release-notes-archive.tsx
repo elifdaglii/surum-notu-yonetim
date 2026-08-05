@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FileCode, FileDown, Search } from "lucide-react";
 import { fetchReleaseNotes } from "@/api/releaseNotes";
 import { categoryBadgeVariant, formatReleaseDate } from "@/lib/release-notes";
-import type { ReleaseNote } from "@/types";
+import type { ReleaseNote, Role } from "@/types";
 
 import { AddReleaseNoteDialog } from "@/components/add-release-note-dialog";
 import { ReleaseNoteDetailDialog } from "@/components/release-note-detail-dialog";
@@ -17,10 +17,14 @@ type ReleaseNotesArchiveProps = {
   // Filtre/arama state'ini korumak için component'i remount etmek yerine (key prop)
   // bunu bir useEffect bağımlılığı olarak kullanıyoruz.
   reloadSignal?: number;
-  // true ise (ADMIN) detay modalında Düzenle/Sil butonları görünür. USER için false -
-  // PUT/DELETE zaten backend'de @PreAuthorize("hasRole('ADMIN')") ile korunuyor,
-  // burada sadece USER'a işlevsiz butonlar gösterilmesin diye gizliyoruz.
-  canManage?: boolean;
+  // Giriş yapmış kullanıcının rolü ve kullanıcı adı - detay modalındaki Düzenle/Sil
+  // butonlarının hangi notlarda görüneceğini belirlemek için (ADMIN her notu, USER
+  // sadece kendi oluşturduğu notu yönetebilir). Backend PUT/DELETE'te aynı kuralı
+  // zaten uyguluyor (bkz. ReleaseNoteService.assertCanManage), burada sadece USER'a
+  // başkasının notunda işlevsiz/403 ile sonuçlanacak butonlar gösterilmesin diye
+  // aynı mantığı tekrarlıyoruz.
+  role: Role;
+  currentUsername: string;
 };
 
 // Uygulamanın sabit üç kategorisi (yeni özellik / hata çözümü / altyapı temizliği).
@@ -52,7 +56,7 @@ function getPreviewLines(markdown: string, maxLines = 3): string[] {
  * geri oku, tema toggle, avatar vs.) her iki bağlamda farklı olduğu için bu component'in
  * dışında, çağıran sayfada kalıyor.
  */
-export function ReleaseNotesArchive({ token, reloadSignal, canManage = false }: ReleaseNotesArchiveProps) {
+export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername }: ReleaseNotesArchiveProps) {
   const [notes, setNotes] = useState<ReleaseNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -233,7 +237,7 @@ export function ReleaseNotesArchive({ token, reloadSignal, canManage = false }: 
         onOpenChange={(open) => {
           if (!open) setSelectedNote(null);
         }}
-        canManage={canManage}
+        canManage={role === "ADMIN" || selectedNote?.createdByUsername === currentUsername}
         onEditRequested={(note) => {
           setSelectedNote(null);
           setEditingNote(note);

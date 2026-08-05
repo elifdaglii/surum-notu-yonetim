@@ -14,6 +14,8 @@ public interface ReleaseNoteRepository extends JpaRepository<ReleaseNote, Long> 
 
     List<ReleaseNote> findByCategory_IdOrderByReleaseDateDesc(Long categoryId);
 
+    List<ReleaseNote> findByCreatedByIsNull();
+
     @Query("""
             SELECT r FROM ReleaseNote r
             WHERE LOWER(r.version) LIKE LOWER(CONCAT('%', :query, '%'))
