@@ -8,14 +8,17 @@ import com.surumnotu.backend.dto.CategoryRequest;
 import com.surumnotu.backend.dto.CategoryResponse;
 import com.surumnotu.backend.entity.Category;
 import com.surumnotu.backend.repository.CategoryRepository;
+import com.surumnotu.backend.repository.ReleaseNoteRepository;
 
 @Service
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ReleaseNoteRepository releaseNoteRepository;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, ReleaseNoteRepository releaseNoteRepository) {
         this.categoryRepository = categoryRepository;
+        this.releaseNoteRepository = releaseNoteRepository;
     }
 
     public List<CategoryResponse> getAll() {
@@ -30,6 +33,22 @@ public class CategoryService {
                 .build();
 
         return toResponse(categoryRepository.save(category));
+    }
+
+    // Kategoriye bağlı sürüm notu varsa silme reddediliyor - notlar sahipsiz (category=null)
+    // kalıp arşivde "kategorisiz" görünmesin, veri kaybı da olmasın diye. Admin önce o
+    // notları başka bir kategoriye taşımalı ya da silmeli.
+    public void delete(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadi: " + id));
+
+        long linkedNoteCount = releaseNoteRepository.countByCategory_Id(id);
+        if (linkedNoteCount > 0) {
+            throw new CategoryInUseException(
+                    "Bu kategoriye bagli " + linkedNoteCount + " surum notu var, once onlari baska bir kategoriye tasiyin veya silin");
+        }
+
+        categoryRepository.delete(category);
     }
 
     private CategoryResponse toResponse(Category category) {

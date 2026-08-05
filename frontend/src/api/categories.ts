@@ -45,3 +45,31 @@ export async function createCategory(token: string, input: CreateCategoryInput):
 
   return (await response.json()) as Category;
 }
+
+/**
+ * DELETE /api/categories/{id} isteği atar. Sadece ADMIN token'ı ile çalışır.
+ * Kategoriye bağlı sürüm notu varsa backend 409 ile reddeder; diğer delete
+ * fonksiyonlarının aksine burada mesajı frontend'de sabitlemek yerine backend'in
+ * döndüğü (bağlı not sayısını içeren) metni doğrudan kullanıyoruz.
+ */
+export async function deleteCategory(token: string, id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 409) {
+    const message = await response.text();
+    throw new Error(message || "Bu kategoriye bağlı sürüm notları var, önce onları taşıyın veya silin");
+  }
+
+  if (response.status === 404) {
+    throw new Error("Kategori bulunamadı, zaten silinmiş olabilir");
+  }
+
+  if (!response.ok) {
+    throw new Error("Kategori silinemedi");
+  }
+}

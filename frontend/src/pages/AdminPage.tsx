@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import { createUser, deleteUser, fetchUsers } from "../api/admin";
-import { createCategory, fetchCategories } from "../api/categories";
+import { createCategory, deleteCategory, fetchCategories } from "../api/categories";
 import type { AppUser, Category, Role } from "../types";
 
 import { getUsernameFromToken } from "@/lib/jwt";
@@ -69,6 +69,8 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [categoryListError, setCategoryListError] = useState<string | null>(null);
+  const [categoryDeleteError, setCategoryDeleteError] = useState<string | null>(null);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [categoryName, setCategoryName] = useState("");
   const [categoryFormError, setCategoryFormError] = useState<string | null>(null);
   const [submittingCategory, setSubmittingCategory] = useState(false);
@@ -136,6 +138,25 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
       setCategoryListError(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {
       setLoadingCategories(false);
+    }
+  }
+
+  async function handleDeleteCategory(category: Category) {
+    const confirmed = window.confirm(`"${category.name}" kategorisini silmek istediğinize emin misiniz?`);
+    if (!confirmed) {
+      return;
+    }
+
+    setCategoryDeleteError(null);
+    setDeletingCategoryId(category.id);
+
+    try {
+      await deleteCategory(token, category.id);
+      setCategories((prev) => prev.filter((c) => c.id !== category.id));
+    } catch (err) {
+      setCategoryDeleteError(err instanceof Error ? err.message : "Bir hata oluştu");
+    } finally {
+      setDeletingCategoryId(null);
     }
   }
 
@@ -318,18 +339,39 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                 <CardContent>
                   {loadingCategories && <p className="text-sm text-muted-foreground">Yükleniyor...</p>}
                   {categoryListError && <p className="text-sm text-destructive">{categoryListError}</p>}
+                  {categoryDeleteError && (
+                    <p className="mb-2 text-sm text-destructive">{categoryDeleteError}</p>
+                  )}
 
                   {!loadingCategories && !categoryListError && (
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Kategori adı</TableHead>
+                          <TableHead className="text-right"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {categories.map((c) => (
                           <TableRow key={c.id}>
                             <TableCell>{c.name}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteCategory(c)}
+                                disabled={deletingCategoryId === c.id}
+                                aria-label={deletingCategoryId === c.id ? "Siliniyor" : `${c.name} kategorisini sil`}
+                                className="text-muted-foreground hover:bg-destructive-container/10 hover:text-destructive"
+                              >
+                                {deletingCategoryId === c.id ? (
+                                  <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="size-4" />
+                                )}
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
