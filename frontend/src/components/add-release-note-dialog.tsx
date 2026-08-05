@@ -18,6 +18,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type AddReleaseNoteDialogProps = {
   token: string;
@@ -275,23 +282,25 @@ export function AddReleaseNoteDialog({
               >
                 Kategori
               </label>
-              <select
-                id="release-category"
+              <Select
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onValueChange={setCategoryId}
                 disabled={loadingCategories || categories.length === 0}
                 required
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
               >
-                <option value="" disabled>
-                  {loadingCategories ? "Yükleniyor..." : "Kategori seçin"}
-                </option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="release-category" className="w-full">
+                  <SelectValue
+                    placeholder={loadingCategories ? "Yükleniyor..." : "Kategori seçin"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {categoryLoadError && (
                 <p className="text-xs text-destructive">{categoryLoadError}</p>
               )}

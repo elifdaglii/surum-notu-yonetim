@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -277,15 +284,15 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                       <label htmlFor="new-role" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Rol
                       </label>
-                      <select
-                        id="new-role"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value as Role)}
-                        className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-                      >
-                        <option value="USER">USER</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
+                      <Select value={role} onValueChange={(value) => setRole(value as Role)}>
+                        <SelectTrigger id="new-role" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USER">USER</SelectItem>
+                          <SelectItem value="ADMIN">ADMIN</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {formError && <p className="text-sm text-destructive">{formError}</p>}

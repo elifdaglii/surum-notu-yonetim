@@ -120,7 +120,9 @@ export function AdminSidebar({
                 <AvatarFallback>{initial}</AvatarFallback>
               </Avatar>
               <div className="flex min-w-0 flex-col leading-tight">
-                <span className="truncate text-sm font-medium text-foreground">{username}</span>
+                <span className="truncate text-sm font-medium text-foreground">
+                  {username}
+                </span>
                 <span className="text-xs text-muted-foreground">Admin</span>
               </div>
             </button>
@@ -129,7 +131,9 @@ export function AdminSidebar({
             <DropdownMenuLabel>
               <div className="flex flex-col">
                 <span className="font-medium">{username}</span>
-                <span className="text-xs font-normal text-muted-foreground">Admin</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  Admin
+                </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
