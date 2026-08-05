@@ -179,10 +179,10 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
                 }
               }}
               className={cn(
-                "group relative cursor-pointer border-l-2 border-l-transparent transition-colors hover:bg-muted/30",
+                "group relative cursor-pointer transition-all duration-200 hover:bg-muted/30",
                 note.category
-                  ? getCategoryColor(note.category.name).hoverBorderClassName
-                  : "hover:border-l-primary"
+                  ? getCategoryColor(note.category.name).cardBorderClassName
+                  : "border-l-2 border-l-primary/30 hover:border-l-4 hover:border-l-primary"
               )}
             >
               {/* PDF/HTML indirme ikonları - şimdilik işlevsiz, her zaman görünür.
