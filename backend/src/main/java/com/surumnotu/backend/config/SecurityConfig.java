@@ -41,10 +41,12 @@ public class SecurityConfig {
 
     // React dev server'i (Vite, varsayilan port 5173) farkli bir origin sayildigi icin
     // tarayici bu izin olmadan fetch/axios isteklerinin cevabini JS koduna vermez.
+    // Vite, 5173 mesgulse otomatik olarak sonraki bos porta (5174, 5175, ...) gecer;
+    // bu yuzden sabit port yerine pattern kullaniyoruz ki port degisince CORS kirilmasin.
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
