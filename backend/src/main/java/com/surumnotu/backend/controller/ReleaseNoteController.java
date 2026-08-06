@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.surumnotu.backend.dto.ReleaseNoteRequest;
 import com.surumnotu.backend.dto.ReleaseNoteResponse;
+import com.surumnotu.backend.service.HtmlExportService;
 import com.surumnotu.backend.service.PdfExportService;
 import com.surumnotu.backend.service.ReleaseNoteService;
 
@@ -30,10 +31,13 @@ public class ReleaseNoteController {
 
     private final ReleaseNoteService releaseNoteService;
     private final PdfExportService pdfExportService;
+    private final HtmlExportService htmlExportService;
 
-    public ReleaseNoteController(ReleaseNoteService releaseNoteService, PdfExportService pdfExportService) {
+    public ReleaseNoteController(ReleaseNoteService releaseNoteService, PdfExportService pdfExportService,
+                                  HtmlExportService htmlExportService) {
         this.releaseNoteService = releaseNoteService;
         this.pdfExportService = pdfExportService;
+        this.htmlExportService = htmlExportService;
     }
 
     @GetMapping
@@ -60,6 +64,17 @@ public class ReleaseNoteController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdfExportService.fileName(note) + "\"")
                 .body(pdf);
+    }
+
+    @GetMapping("/{id}/export/html")
+    public ResponseEntity<byte[]> exportHtml(@PathVariable Long id) {
+        ReleaseNoteResponse note = releaseNoteService.getById(id);
+        byte[] html = htmlExportService.generate(note);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + htmlExportService.fileName(note) + "\"")
+                .body(html);
     }
 
     @PostMapping

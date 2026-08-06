@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { FileCode, FileDown, Search } from "lucide-react";
 import { fetchCategories } from "@/api/categories";
-import { downloadReleaseNotePdf, fetchReleaseNotes } from "@/api/releaseNotes";
+import { downloadReleaseNoteHtml, downloadReleaseNotePdf, fetchReleaseNotes } from "@/api/releaseNotes";
 import { getCategoryColor, formatReleaseDate } from "@/lib/release-notes";
 import type { Category, ReleaseNote, Role } from "@/types";
 
@@ -86,6 +86,16 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
       await downloadReleaseNotePdf(token, note.id, note.version);
     } catch (err) {
       alert(err instanceof Error ? err.message : "PDF indirilemedi");
+    }
+  }
+
+  // Kart üzerindeki HTML ikonuna tıklanınca çağrılır (SNYS-28).
+  async function handleDownloadHtml(e: MouseEvent, note: ReleaseNote) {
+    e.stopPropagation();
+    try {
+      await downloadReleaseNoteHtml(token, note.id, note.version);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "HTML indirilemedi");
     }
   }
 
@@ -196,9 +206,8 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
                   : "border-l-2 border-l-primary/30 hover:border-l-4 hover:border-l-primary"
               )}
             >
-              {/* PDF indirme SNYS-27a ile işlevli hâle geldi. HTML indirme hâlâ stub
-                  (SNYS-28 kapsamında ele alınacak) - stopPropagation: tıklanınca kartın
-                  onClick'i (detay modalını açan) tetiklenmesin. */}
+              {/* PDF (SNYS-27a) ve HTML (SNYS-28) indirme - stopPropagation: tıklanınca
+                  kartın onClick'i (detay modalını açan) tetiklenmesin. */}
               <div className="absolute top-3 right-3 flex gap-1">
                 <Button
                   type="button"
@@ -214,7 +223,7 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
                   variant="ghost"
                   size="icon-sm"
                   aria-label="HTML indir"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => handleDownloadHtml(e, note)}
                 >
                   <FileCode className="size-3.5" />
                 </Button>

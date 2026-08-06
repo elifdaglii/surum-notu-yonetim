@@ -81,12 +81,21 @@ export async function updateReleaseNote(
   return (await response.json()) as ReleaseNote;
 }
 
-/**
- * GET /api/release-notes/{id}/export/pdf isteği atar ve dönen PDF'i tarayıcıda indirir.
- * Dosya adını backend'in ürettiği versiyon numarasından oluşturuyoruz (Content-Disposition
- * header'ı CORS'ta varsayılan olarak JS'e açık değil - Access-Control-Expose-Headers
- * gerektirir - bunu eklemek yerine zaten elimizde olan note.version'ı kullanıyoruz).
- */
+// PDF ve HTML export butonlarının paylaştığı indirme mekaniği: blob'u bir object URL'e
+// çevirip görünmez bir <a download> ile tıklatıyor. Dosya adını backend'in ürettiği
+// versiyon numarasından oluşturuyoruz (Content-Disposition header'ı CORS'ta varsayılan
+// olarak JS'e açık değil - Access-Control-Expose-Headers gerektirir - bunu eklemek
+// yerine zaten elimizde olan note.version'ı kullanıyoruz).
+function triggerBrowserDownload(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/** GET /api/release-notes/{id}/export/pdf isteği atar ve dönen PDF'i tarayıcıda indirir. */
 export async function downloadReleaseNotePdf(token: string, id: number, version: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/release-notes/${id}/export/pdf`, {
     headers: {
@@ -98,13 +107,26 @@ export async function downloadReleaseNotePdf(token: string, id: number, version:
     throw new Error("PDF oluşturulamadı");
   }
 
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `surum-notu-${version}.pdf`;
-  link.click();
-  URL.revokeObjectURL(url);
+  triggerBrowserDownload(await response.blob(), `surum-notu-${version}.pdf`);
+}
+
+/**
+ * GET /api/release-notes/{id}/export/html isteği atar ve dönen tek-dosya HTML'i
+ * tarayıcıda indirir. CSS ve font dosya içine gömülü (bkz. backend HtmlExportService) -
+ * indirilen dosya internet bağlantısı olmadan da tek başına açılabiliyor.
+ */
+export async function downloadReleaseNoteHtml(token: string, id: number, version: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/release-notes/${id}/export/html`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("HTML oluşturulamadı");
+  }
+
+  triggerBrowserDownload(await response.blob(), `surum-notu-${version}.html`);
 }
 
 /**
