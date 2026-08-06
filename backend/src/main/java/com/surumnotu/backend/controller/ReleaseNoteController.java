@@ -3,7 +3,9 @@ package com.surumnotu.backend.controller;
 import java.security.Principal;
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.surumnotu.backend.dto.ReleaseNoteRequest;
 import com.surumnotu.backend.dto.ReleaseNoteResponse;
+import com.surumnotu.backend.service.PdfExportService;
 import com.surumnotu.backend.service.ReleaseNoteService;
 
 import jakarta.validation.Valid;
@@ -26,9 +29,11 @@ import jakarta.validation.Valid;
 public class ReleaseNoteController {
 
     private final ReleaseNoteService releaseNoteService;
+    private final PdfExportService pdfExportService;
 
-    public ReleaseNoteController(ReleaseNoteService releaseNoteService) {
+    public ReleaseNoteController(ReleaseNoteService releaseNoteService, PdfExportService pdfExportService) {
         this.releaseNoteService = releaseNoteService;
+        this.pdfExportService = pdfExportService;
     }
 
     @GetMapping
@@ -44,6 +49,17 @@ public class ReleaseNoteController {
     @GetMapping("/{id}")
     public ReleaseNoteResponse getById(@PathVariable Long id) {
         return releaseNoteService.getById(id);
+    }
+
+    @GetMapping("/{id}/export/pdf")
+    public ResponseEntity<byte[]> exportPdf(@PathVariable Long id) {
+        ReleaseNoteResponse note = releaseNoteService.getById(id);
+        byte[] pdf = pdfExportService.generate(note);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdfExportService.fileName(note) + "\"")
+                .body(pdf);
     }
 
     @PostMapping

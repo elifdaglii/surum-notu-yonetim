@@ -3,6 +3,7 @@ package com.surumnotu.backend.service;
 import java.util.List;
 
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.safety.Safelist;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -119,8 +120,14 @@ public class ReleaseNoteService {
                 .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadi: " + categoryId));
     }
 
+    // contentMarkdown markdown kaynagi, HTML degil - Jsoup.clean(rawContent, Safelist.none())
+    // varsayilan ayarlarla cagrilirsa girdiyi HTML olarak parse/serialize ederken bos
+    // satirlari/satir sonlarini tek boslugta topluyor, bu da markdown'un blok yapisini
+    // (basliklar, madde listeleri) bozuyor. prettyPrint(false) ile whitespace/satir
+    // sonlari oldugu gibi korunuyor, HTML tag'leri (Safelist.none()) yine de temizleniyor.
     private String sanitize(String rawContent) {
-        return Jsoup.clean(rawContent, Safelist.none());
+        Document.OutputSettings outputSettings = new Document.OutputSettings().prettyPrint(false);
+        return Jsoup.clean(rawContent, "", Safelist.none(), outputSettings);
     }
 
     private ReleaseNoteResponse toResponse(ReleaseNote note) {

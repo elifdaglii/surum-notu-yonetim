@@ -82,6 +82,32 @@ export async function updateReleaseNote(
 }
 
 /**
+ * GET /api/release-notes/{id}/export/pdf isteği atar ve dönen PDF'i tarayıcıda indirir.
+ * Dosya adını backend'in ürettiği versiyon numarasından oluşturuyoruz (Content-Disposition
+ * header'ı CORS'ta varsayılan olarak JS'e açık değil - Access-Control-Expose-Headers
+ * gerektirir - bunu eklemek yerine zaten elimizde olan note.version'ı kullanıyoruz).
+ */
+export async function downloadReleaseNotePdf(token: string, id: number, version: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/release-notes/${id}/export/pdf`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("PDF oluşturulamadı");
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `surum-notu-${version}.pdf`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
  * DELETE /api/release-notes/{id} isteği atar. Sadece ADMIN token'ı ile çalışır
  * (backend'de @PreAuthorize("hasRole('ADMIN')")).
  */

@@ -76,6 +76,21 @@
 			<artifactId>jsoup</artifactId>
 			<version>1.17.2</version>
 		</dependency>
+
+		<!-- Markdown -> HTML (PDF export icin, SNYS-27a) -->
+		<dependency>
+			<groupId>org.commonmark</groupId>
+			<artifactId>commonmark</artifactId>
+			<version>0.24.0</version>
+		</dependency>
+		<!-- HTML+CSS -> PDF (PDF export icin, SNYS-27a). PDFBox tabanli, Spring/Jakarta EE
+		     ile catisan hicbir bagimliligi yok; XHTML+CSS render ettigi icin markdown'dan
+		     uretilen HTML'i (basliklar, kalin, listeler) duz metne dokmeden PDF'e cevirebiliyor. -->
+		<dependency>
+			<groupId>com.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-pdfbox</artifactId>
+			<version>1.0.10</version>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

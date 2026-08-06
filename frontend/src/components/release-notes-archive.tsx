@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { FileCode, FileDown, Search } from "lucide-react";
 import { fetchCategories } from "@/api/categories";
-import { fetchReleaseNotes } from "@/api/releaseNotes";
+import { downloadReleaseNotePdf, fetchReleaseNotes } from "@/api/releaseNotes";
 import { getCategoryColor, formatReleaseDate } from "@/lib/release-notes";
 import type { Category, ReleaseNote, Role } from "@/types";
 
@@ -77,6 +77,17 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
       .then(setCategories)
       .catch(() => setCategories([]));
   }, [token]);
+
+  // Kart üzerindeki PDF ikonuna tıklanınca çağrılır. stopPropagation kartın kendi
+  // onClick'ini (detay modalını açan) tetiklemesin diye burada da yapılıyor.
+  async function handleDownloadPdf(e: MouseEvent, note: ReleaseNote) {
+    e.stopPropagation();
+    try {
+      await downloadReleaseNotePdf(token, note.id, note.version);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "PDF indirilemedi");
+    }
+  }
 
   async function loadNotes() {
     setLoading(true);
@@ -185,16 +196,16 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
                   : "border-l-2 border-l-primary/30 hover:border-l-4 hover:border-l-primary"
               )}
             >
-              {/* PDF/HTML indirme ikonları - şimdilik işlevsiz, her zaman görünür.
-                  stopPropagation: tıklanınca kartın onClick'i (detay modalını açan)
-                  tetiklenmesin. */}
+              {/* PDF indirme SNYS-27a ile işlevli hâle geldi. HTML indirme hâlâ stub
+                  (SNYS-28 kapsamında ele alınacak) - stopPropagation: tıklanınca kartın
+                  onClick'i (detay modalını açan) tetiklenmesin. */}
               <div className="absolute top-3 right-3 flex gap-1">
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
                   aria-label="PDF indir"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => handleDownloadPdf(e, note)}
                 >
                   <FileDown className="size-3.5" />
                 </Button>
