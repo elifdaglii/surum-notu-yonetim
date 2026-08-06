@@ -66,8 +66,7 @@ public class PdfExportService {
         String css = "@page { size: A4; margin: 2.2cm 2cm; }" + documentRenderer.sharedCss();
 
         return "<html><head><style>" + css + "</style></head><body>"
-                + documentRenderer.renderHeaderHtml(note)
-                + "<div class=\"content\">" + contentHtml + "</div>"
+                + documentRenderer.renderBodyHtml(note, contentHtml)
                 + "</body></html>";
     }
 }

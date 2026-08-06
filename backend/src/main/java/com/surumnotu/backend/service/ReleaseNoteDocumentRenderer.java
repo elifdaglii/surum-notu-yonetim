@@ -32,7 +32,7 @@ public class ReleaseNoteDocumentRenderer {
         return htmlRenderer.render(document);
     }
 
-    public String renderHeaderHtml(ReleaseNoteResponse note) {
+    private String renderHeaderHtml(ReleaseNoteResponse note) {
         String categoryBadge = note.category() != null
                 ? "<span class=\"category-badge\">" + escapeHtml(note.category().name()) + "</span>"
                 : "";
@@ -45,11 +45,26 @@ public class ReleaseNoteDocumentRenderer {
                 + "</div>";
     }
 
+    /** Marka başlığı + içerik, okunabilir bir genişliğe sınırlanmış ve ortalanmış tek bir
+     *  "page" kabında (bkz. sharedCss .page) - logo/başlık de dahil hiçbir şey doğrudan
+     *  sayfa/pencere kenarına yapışmıyor. */
+    public String renderBodyHtml(ReleaseNoteResponse note, String contentHtml) {
+        return "<div class=\"page\">"
+                + renderHeaderHtml(note)
+                + "<div class=\"content\">" + contentHtml + "</div>"
+                + "</div>";
+    }
+
     /** İki dışa aktarma biçiminin de kullandığı ortak kurallar - font kaynağı (embed
      *  mekanizması) ve sayfa/print ayarları her servisin kendi CSS'ine kalıyor. */
     public String sharedCss() {
-        return "* { font-family: 'Noto Sans', sans-serif; }"
+        return "* { font-family: 'Noto Sans', sans-serif; box-sizing: border-box; }"
                 + "body { color: #1f2430; background-color: #ffffff; font-size: 11pt; line-height: 1.5; margin: 0; }"
+                // Okunabilir bir genişliğe sınırlayıp ortalıyor - PDF'te @page zaten kenar
+                // boşluğu veriyor (bkz. PdfExportService), bu yalnızca içeriği geniş
+                // A4 sayfasında ortalıyor; HTML'de asıl boşluğu HtmlExportService'in
+                // eklediği ek padding kuralı sağlıyor (tarayıcıda @page karşılığı yok).
+                + ".page { max-width: 800px; margin: 0 auto; }"
                 // openhtmltopdf flexbox/inline-SVG desteklemiyor (bkz. PDF export), bu yüzden
                 // marka rozeti kategori etiketiyle aynı, basit inline-block + arka plan
                 // renginde bir metin rozeti - hem PDF hem tarayıcıda aynı görünüyor.
