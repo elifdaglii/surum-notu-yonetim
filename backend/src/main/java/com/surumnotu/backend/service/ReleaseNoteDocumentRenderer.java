@@ -1,6 +1,10 @@
 package com.surumnotu.backend.service;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.Locale;
 
 import org.commonmark.node.Node;
@@ -12,20 +16,27 @@ import com.surumnotu.backend.dto.ReleaseNoteResponse;
 
 /**
  * PDF (SNYS-27a) ve HTML (SNYS-28) dışa aktarmalarının paylaştığı kısım: markdown'ı
- * commonmark ile HTML'e render etme, ortak marka başlığı (SNYS logosu + versiyon +
+ * commonmark ile HTML'e render etme, ortak marka başlığı (onbiron logosu + versiyon +
  * tarih + kategori etiketi) ve ortak CSS kuralları. İki servis de aynı görsel kimliği
- * (mor vurgu #7c3aed, açık/beyaz zemin) burada tek yerden alıyor - tekrar yazılmıyor.
+ * (kırmızı vurgu #e0473d, açık/beyaz zemin) burada tek yerden alıyor - tekrar yazılmıyor.
  */
 @Component
 public class ReleaseNoteDocumentRenderer {
 
-    static final String BRAND_PURPLE = "#7c3aed";
+    // Logodan (branding/logo.png) piksel olarak örneklenen ton - marka kırmızısı.
+    static final String BRAND_RED = "#e0473d";
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("tr", "TR"));
 
     private final Parser markdownParser = Parser.builder().build();
     private final HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
+
+    // Açık zeminde kullanılacak "onbiron" logosu (branding/logo_light.png) - base64 data
+    // URI olarak <img>'e gömülüyor, hem PDF (openhtmltopdf data URI'yi doğrudan render
+    // edebiliyor) hem HTML export'ta (dışarıdaki dosyaya bağımlı olmadan) aynı şekilde
+    // çalışıyor. Tek seferlik okuma, her iki servis de aynı örneği paylaşıyor (@Component).
+    private final String logoDataUri = "data:image/png;base64," + readResourceAsBase64("/branding/logo_light.png");
 
     public String renderContentHtml(String markdown) {
         Node document = markdownParser.parse(markdown == null ? "" : markdown);
@@ -37,12 +48,23 @@ public class ReleaseNoteDocumentRenderer {
                 ? "<span class=\"category-badge\">" + escapeHtml(note.category().name()) + "</span>"
                 : "";
 
-        return "<div class=\"brand\"><span>SNYS</span></div>"
+        return "<div class=\"brand\"><img src=\"" + logoDataUri + "\" alt=\"onbiron\" /></div>"
                 + "<div class=\"header\">"
                 + "<p class=\"version\">" + escapeHtml(note.version()) + "</p>"
                 + "<p class=\"meta\">" + note.releaseDate().format(DATE_FORMATTER) + "</p>"
                 + categoryBadge
                 + "</div>";
+    }
+
+    private static String readResourceAsBase64(String resourcePath) {
+        try (InputStream stream = ReleaseNoteDocumentRenderer.class.getResourceAsStream(resourcePath)) {
+            if (stream == null) {
+                throw new IllegalStateException("Kaynak bulunamadi: " + resourcePath);
+            }
+            return Base64.getEncoder().encodeToString(stream.readAllBytes());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Kaynak okunamadi: " + resourcePath, e);
+        }
     }
 
     /** Marka başlığı + içerik, okunabilir bir genişliğe sınırlanmış ve ortalanmış tek bir
@@ -65,17 +87,19 @@ public class ReleaseNoteDocumentRenderer {
                 // A4 sayfasında ortalıyor; HTML'de asıl boşluğu HtmlExportService'in
                 // eklediği ek padding kuralı sağlıyor (tarayıcıda @page karşılığı yok).
                 + ".page { max-width: 800px; margin: 0 auto; }"
-                // openhtmltopdf flexbox/inline-SVG desteklemiyor (bkz. PDF export), bu yüzden
-                // marka rozeti kategori etiketiyle aynı, basit inline-block + arka plan
-                // renginde bir metin rozeti - hem PDF hem tarayıcıda aynı görünüyor.
+                // Sol üstte marka logosu (onbiron, açık zemin varyantı) - eskiden burada
+                // metinsel bir "SNYS" rozeti vardı, konum/boşluk mantığı (üstte, header'dan
+                // önce, 10pt alt boşluk) aynı kalıyor, sadece rozet yerine gerçek logo geldi.
                 + ".brand { margin-bottom: 10pt; }"
-                + ".brand span { display: inline-block; background-color: " + BRAND_PURPLE + "; color: #ffffff;"
-                + " font-weight: 700; font-size: 9pt; letter-spacing: 0.5pt; padding: 3pt 8pt; border-radius: 4pt; }"
-                + ".header { margin-bottom: 18pt; border-bottom: 2pt solid " + BRAND_PURPLE + "; padding-bottom: 10pt; }"
-                + ".version { font-size: 22pt; font-weight: 700; color: " + BRAND_PURPLE + "; margin: 0; }"
+                + ".brand img { display: block; height: 24pt; width: auto; }"
+                + ".header { margin-bottom: 18pt; border-bottom: 1.5pt solid " + BRAND_RED + "; padding-bottom: 10pt; }"
+                + ".version { font-size: 22pt; font-weight: 700; color: " + BRAND_RED + "; margin: 0; }"
                 + ".meta { font-size: 10pt; color: #555555; margin: 4pt 0 0 0; }"
+                // Kategori badge'i artik outline stil: kirmizi border + kirmizi metin,
+                // dolu kirmizi zemin degil (genel zemin acik/beyaz kaliyor).
                 + ".category-badge { display: inline-block; margin-top: 8pt; padding: 3pt 10pt; border-radius: 10pt;"
-                + " background-color: " + BRAND_PURPLE + "; color: #ffffff; font-size: 9pt; font-weight: 700; }"
+                + " border: 1pt solid " + BRAND_RED + "; color: " + BRAND_RED + "; background-color: #ffffff;"
+                + " font-size: 9pt; font-weight: 700; }"
                 + ".content h1, .content h2, .content h3 { color: #1f2430; font-weight: 700; margin: 14pt 0 6pt 0; }"
                 + ".content h1 { font-size: 16pt; }"
                 + ".content h2 { font-size: 14pt; }"
