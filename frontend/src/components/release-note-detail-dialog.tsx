@@ -108,7 +108,10 @@ export function ReleaseNoteDetailDialog({
             <>
               <DialogHeader>
                 <DialogTitle>{note.version}</DialogTitle>
-                <DialogDescription>{formatReleaseDate(note.releaseDate)}</DialogDescription>
+                <DialogDescription>
+                  {formatReleaseDate(note.releaseDate)}
+                  {note.createdByUsername && ` · ${note.createdByUsername} tarafından`}
+                </DialogDescription>
               </DialogHeader>
 
               {note.category && (

@@ -237,6 +237,12 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
                   </span>
                 </div>
 
+                {note.createdByUsername && (
+                  <span className="text-xs text-muted-foreground/70">
+                    {note.createdByUsername} tarafından
+                  </span>
+                )}
+
                 {note.category && (
                   <div>
                     <Badge variant="outline" className={getCategoryColor(note.category.name).badgeClassName}>
