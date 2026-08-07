@@ -9,9 +9,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.surumnotu.backend.dto.ForgotPasswordRequest;
+import com.surumnotu.backend.dto.ForgotPasswordResponse;
 import com.surumnotu.backend.dto.LoginRequest;
 import com.surumnotu.backend.dto.LoginResponse;
 import com.surumnotu.backend.dto.RegisterRequest;
+import com.surumnotu.backend.dto.ResetPasswordRequest;
 import com.surumnotu.backend.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -35,6 +38,17 @@ public class AuthController {
     public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request.username(), request.password());
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ForgotPasswordResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.forgotPassword(request.username()));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     @ExceptionHandler(BadCredentialsException.class)

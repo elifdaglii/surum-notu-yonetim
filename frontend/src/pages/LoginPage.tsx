@@ -18,6 +18,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 type LoginPageProps = {
   onLoginSuccess: (token: string, role: Role) => void;
+  onForgotPassword: () => void;
 };
 
 // Boş alan validasyonu: her input için ayrı hata metni tutuyoruz ki
@@ -27,7 +28,7 @@ type FieldErrors = {
   password?: string;
 };
 
-function LoginPage({ onLoginSuccess }: LoginPageProps) {
+function LoginPage({ onLoginSuccess, onForgotPassword }: LoginPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -157,6 +158,7 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </Button>
             <button
               type="button"
+              onClick={onForgotPassword}
               className="text-sm text-muted-foreground hover:text-foreground hover:underline"
             >
               Şifremi Unuttum

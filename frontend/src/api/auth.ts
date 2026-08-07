@@ -30,3 +30,49 @@ export async function login(username: string, password: string): Promise<LoginRe
 
   return (await response.json()) as LoginResult;
 }
+
+type ForgotPasswordResult = {
+  message: string;
+  // Kullanıcı bulunduysa dolu, bulunamadıysa null (email yok, dev-mode olarak
+  // token doğrudan response'ta dönüyor - bkz. backend AuthService.forgotPassword).
+  token: string | null;
+};
+
+/**
+ * POST /api/auth/forgot-password isteği atar. Kullanıcı sistemde olsun ya da
+ * olmasın backend her zaman 200 ve aynı genel mesajı döner (username enumeration'a
+ * karşı) - sadece token alanı kullanıcı bulunduysa dolu gelir.
+ */
+export async function forgotPassword(username: string): Promise<ForgotPasswordResult> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Sıfırlama token'ı oluşturulamadı");
+  }
+
+  return (await response.json()) as ForgotPasswordResult;
+}
+
+/**
+ * POST /api/auth/reset-password isteği atar. Token geçersiz/süresi dolmuşsa
+ * backend 400 döner.
+ */
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token, newPassword }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Şifre güncellenemedi. Token geçersiz veya süresi dolmuş olabilir");
+  }
+}

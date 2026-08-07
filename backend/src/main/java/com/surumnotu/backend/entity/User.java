@@ -1,5 +1,7 @@
 package com.surumnotu.backend.entity;
 
+import java.time.Instant;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -32,4 +34,10 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    // Şifremi unuttum akışı için: token üretilince set edilir, kullanılınca ya da
+    // süresi dolunca temizlenir (tek kullanımlık).
+    private String resetToken;
+
+    private Instant resetTokenExpiry;
 }

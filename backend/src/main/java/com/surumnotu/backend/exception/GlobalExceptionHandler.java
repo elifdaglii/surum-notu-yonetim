@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.surumnotu.backend.service.CategoryInUseException;
+import com.surumnotu.backend.service.InvalidResetTokenException;
 import com.surumnotu.backend.service.LastAdminException;
 import com.surumnotu.backend.service.ResourceNotFoundException;
 import com.surumnotu.backend.service.UsernameAlreadyExistsException;
@@ -32,6 +33,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CategoryInUseException.class)
     public ResponseEntity<String> handleCategoryInUse(CategoryInUseException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidResetTokenException.class)
+    public ResponseEntity<String> handleInvalidResetToken(InvalidResetTokenException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)

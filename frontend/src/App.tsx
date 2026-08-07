@@ -1,8 +1,13 @@
 import { useState } from "react";
 import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import AdminPage from "./pages/AdminPage";
 import HomePage from "./pages/HomePage";
 import type { Role } from "./types";
+
+// Router yok, sayfa geçişleri elle yönetiliyor - LoginPage/ForgotPasswordPage arası
+// geçiş için bu iki değerli state yeterli (giriş yapılmadan önceki tek dallanma).
+type UnauthenticatedView = "login" | "forgot-password";
 
 function App() {
   // Sayfa yenilendiğinde localStorage'daki token ve rol ile giriş durumu korunuyor.
@@ -12,6 +17,7 @@ function App() {
   const [role, setRole] = useState<Role | null>(
     () => localStorage.getItem("role") as Role | null,
   );
+  const [unauthenticatedView, setUnauthenticatedView] = useState<UnauthenticatedView>("login");
 
   function handleLoginSuccess(newToken: string, newRole: Role) {
     localStorage.setItem("token", newToken);
@@ -28,7 +34,15 @@ function App() {
   }
 
   if (!token || !role) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    if (unauthenticatedView === "forgot-password") {
+      return <ForgotPasswordPage onBackToLogin={() => setUnauthenticatedView("login")} />;
+    }
+    return (
+      <LoginPage
+        onLoginSuccess={handleLoginSuccess}
+        onForgotPassword={() => setUnauthenticatedView("forgot-password")}
+      />
+    );
   }
 
   // Hangi sayfanın render edileceği artık doğrudan role'den türetiliyor, ayrı bir
