@@ -14,6 +14,10 @@ public interface ReleaseNoteRepository extends JpaRepository<ReleaseNote, Long> 
 
     List<ReleaseNote> findByCategory_IdOrderByReleaseDateDesc(Long categoryId);
 
+    List<ReleaseNote> findByCreatedBy_UsernameOrderByReleaseDateDesc(String username);
+
+    List<ReleaseNote> findByCategory_IdAndCreatedBy_UsernameOrderByReleaseDateDesc(Long categoryId, String username);
+
     List<ReleaseNote> findByCreatedByIsNull();
 
     long countByCategory_Id(Long categoryId);

@@ -11,7 +11,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+// "Yazan" dropdown'ının seçenek listesi için sentinel değer - Radix Select boş string
+// value kabul etmiyor, "Tümü" seçeneğini bu özel değerle temsil edip onValueChange'de
+// null'a çeviriyoruz (authorFilter state'i null/username olarak tutuluyor).
+const ALL_AUTHORS_VALUE = "__all__";
 
 type ReleaseNotesArchiveProps = {
   token: string;
@@ -60,6 +72,7 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [authorFilter, setAuthorFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Detay modalında gösterilen not (kart tıklanınca set edilir, null ise modal kapalı).
@@ -111,20 +124,43 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
     }
   }
 
+  // "Yazan" dropdown'ının seçenekleri: sistemdeki TÜM kullanıcılar yerine (GET
+  // /api/admin/users sadece ADMIN'e açık - bu component USER'ın gördüğü HomePage'de de
+  // kullanılıyor, USER için bu istek 403 döner) şu an ekrandaki notların sahiplerinden
+  // türetiyoruz. Böylece hem USER hem ADMIN için çalışır hem de listede sadece gerçekten
+  // not yazmış kullanıcılar görünür.
+  const authors = useMemo(() => {
+    const unique = new Set<string>();
+    notes.forEach((note) => {
+      if (note.createdByUsername) unique.add(note.createdByUsername);
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b, "tr"));
+  }, [notes]);
+
   // Backend'e ayrıca bir "arama/filtre" isteği atmıyoruz: liste zaten tek seferde
-  // çekiliyor, kategori/metin filtresi client-side. Not sayısı büyüdükçe bu backend'e
-  // taşınabilir ama şu an için gereksiz bir round-trip'ten kaçınıyoruz.
+  // çekiliyor, kategori/yazan/metin filtresi client-side. Not sayısı büyüdükçe bu
+  // backend'e taşınabilir ama şu an için gereksiz bir round-trip'ten kaçınıyoruz.
   const filteredNotes = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return notes.filter((note) => {
       const matchesFilter = !activeFilter || note.category?.name === activeFilter;
+      const matchesAuthor = !authorFilter || note.createdByUsername === authorFilter;
       const matchesSearch =
         !query ||
         note.version.toLowerCase().includes(query) ||
         note.contentMarkdown.toLowerCase().includes(query);
-      return matchesFilter && matchesSearch;
+      return matchesFilter && matchesAuthor && matchesSearch;
     });
-  }, [notes, activeFilter, searchQuery]);
+  }, [notes, activeFilter, authorFilter, searchQuery]);
+
+  // Kartlardaki ve detay modalındaki "X tarafından" yazısına tıklanınca çağrılır -
+  // "Yazan" dropdown'uyla aynı state'i (authorFilter) set eder, ayrı bir filtre
+  // mekanizması yok. Modal açıksa (tıklama detay modalından geldiyse) kapatılır ki
+  // kullanıcı filtrelenmiş kart listesini hemen görsün.
+  function handleAuthorClick(username: string) {
+    setAuthorFilter(username);
+    setSelectedNote(null);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -156,6 +192,28 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
               {category.name}
             </button>
           ))}
+
+          {authors.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Yazan:</span>
+              <Select
+                value={authorFilter ?? ALL_AUTHORS_VALUE}
+                onValueChange={(value) => setAuthorFilter(value === ALL_AUTHORS_VALUE ? null : value)}
+              >
+                <SelectTrigger size="sm" className="h-7 w-auto min-w-[8rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_AUTHORS_VALUE}>Tümü</SelectItem>
+                  {authors.map((author) => (
+                    <SelectItem key={author} value={author}>
+                      {author}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <div className="relative w-full sm:w-72">
@@ -238,9 +296,16 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
                 </div>
 
                 {note.createdByUsername && (
-                  <span className="text-xs text-muted-foreground/70">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAuthorClick(note.createdByUsername!);
+                    }}
+                    className="w-fit text-xs text-muted-foreground/70 hover:text-foreground hover:underline"
+                  >
                     {note.createdByUsername} tarafından
-                  </span>
+                  </button>
                 )}
 
                 {note.category && (
@@ -273,6 +338,7 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
           if (!open) setSelectedNote(null);
         }}
         canManage={role === "ADMIN" || selectedNote?.createdByUsername === currentUsername}
+        onAuthorClick={handleAuthorClick}
         onEditRequested={(note) => {
           setSelectedNote(null);
           setEditingNote(note);

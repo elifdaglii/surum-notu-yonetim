@@ -41,8 +41,9 @@ public class ReleaseNoteController {
     }
 
     @GetMapping
-    public List<ReleaseNoteResponse> getAll(@RequestParam(required = false) Long category) {
-        return releaseNoteService.getAll(category);
+    public List<ReleaseNoteResponse> getAll(@RequestParam(required = false) Long category,
+                                             @RequestParam(required = false) String createdBy) {
+        return releaseNoteService.getAll(category, createdBy);
     }
 
     @GetMapping("/search")

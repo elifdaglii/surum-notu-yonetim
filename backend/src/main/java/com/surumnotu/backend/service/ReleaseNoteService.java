@@ -34,10 +34,17 @@ public class ReleaseNoteService {
         this.userRepository = userRepository;
     }
 
-    public List<ReleaseNoteResponse> getAll(Long categoryId) {
-        List<ReleaseNote> notes = categoryId != null
-                ? releaseNoteRepository.findByCategory_IdOrderByReleaseDateDesc(categoryId)
-                : releaseNoteRepository.findAllByOrderByReleaseDateDesc();
+    public List<ReleaseNoteResponse> getAll(Long categoryId, String createdByUsername) {
+        List<ReleaseNote> notes;
+        if (categoryId != null && createdByUsername != null) {
+            notes = releaseNoteRepository.findByCategory_IdAndCreatedBy_UsernameOrderByReleaseDateDesc(categoryId, createdByUsername);
+        } else if (categoryId != null) {
+            notes = releaseNoteRepository.findByCategory_IdOrderByReleaseDateDesc(categoryId);
+        } else if (createdByUsername != null) {
+            notes = releaseNoteRepository.findByCreatedBy_UsernameOrderByReleaseDateDesc(createdByUsername);
+        } else {
+            notes = releaseNoteRepository.findAllByOrderByReleaseDateDesc();
+        }
 
         return notes.stream().map(this::toResponse).toList();
     }

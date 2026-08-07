@@ -30,6 +30,10 @@ type ReleaseNoteDetailDialogProps = {
   // sadece yetkisiz kullanıcıya 403 ile sonuçlanacak butonlar gösterilmesin diye
   // aynı mantığı tekrarlıyoruz.
   canManage: boolean;
+  // Üstteki "X tarafından" yazısına tıklanınca çağrılıyor - çağıran taraf
+  // (ReleaseNotesArchive) "Yazan" dropdown'uyla aynı authorFilter state'ini set edip
+  // modalı kapatıyor.
+  onAuthorClick: (username: string) => void;
   // "Düzenle"ye basılınca çağrılıyor - çağıran taraf (ReleaseNotesArchive) bu modalı
   // kapatıp AddReleaseNoteDialog'u edit modunda bu notla açıyor.
   onEditRequested: (note: ReleaseNote) => void;
@@ -51,6 +55,7 @@ export function ReleaseNoteDetailDialog({
   open,
   onOpenChange,
   canManage,
+  onAuthorClick,
   onEditRequested,
   onDeleted,
 }: ReleaseNoteDetailDialogProps) {
@@ -110,7 +115,18 @@ export function ReleaseNoteDetailDialog({
                 <DialogTitle>{note.version}</DialogTitle>
                 <DialogDescription>
                   {formatReleaseDate(note.releaseDate)}
-                  {note.createdByUsername && ` · ${note.createdByUsername} tarafından`}
+                  {note.createdByUsername && (
+                    <>
+                      {" · "}
+                      <button
+                        type="button"
+                        onClick={() => onAuthorClick(note.createdByUsername!)}
+                        className="font-medium text-foreground hover:underline"
+                      >
+                        {note.createdByUsername} tarafından
+                      </button>
+                    </>
+                  )}
                 </DialogDescription>
               </DialogHeader>
 
