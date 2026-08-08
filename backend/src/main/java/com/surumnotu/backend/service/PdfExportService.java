@@ -62,8 +62,19 @@ public class PdfExportService {
         return stream;
     }
 
+    /** @page margin box'ları (@bottom-left / @bottom-right) - openhtmltopdf'in CSS Paged
+     *  Media desteğiyle her fiziksel sayfada gerçek "Sayfa X / Y" ve telif metnini
+     *  otomatik basıyor (counter(page)/counter(pages) iki geçişli render ile hesaplanıyor).
+     *  Bu yalnızca PDF'e özgü - HTML'de karşılığı sabit footer-bar div'i (bkz.
+     *  ReleaseNoteDocumentRenderer.renderFooterHtml). Alt margin, footer metnine yer
+     *  açmak için diğer kenarlardan biraz daha geniş tutuldu. */
     private String buildHtml(ReleaseNoteResponse note, String contentHtml) {
-        String css = "@page { size: A4; margin: 2.2cm 2cm; }" + documentRenderer.sharedCss();
+        String css = "@page { size: A4; margin: 2.2cm 2cm 2.6cm 2cm;"
+                + " @bottom-left { content: \"Sayfa \" counter(page) \" / \" counter(pages);"
+                + " font-family: 'Noto Sans'; font-size: 8pt; color: " + ReleaseNoteDocumentRenderer.FOOTER_GRAY + "; }"
+                + " @bottom-right { content: \"" + ReleaseNoteDocumentRenderer.FOOTER_COPYRIGHT + "\";"
+                + " font-family: 'Noto Sans'; font-size: 8pt; color: " + ReleaseNoteDocumentRenderer.FOOTER_GRAY + "; }"
+                + " }" + documentRenderer.sharedCss();
 
         return "<html><head><style>" + css + "</style></head><body>"
                 + documentRenderer.renderBodyHtml(note, contentHtml)

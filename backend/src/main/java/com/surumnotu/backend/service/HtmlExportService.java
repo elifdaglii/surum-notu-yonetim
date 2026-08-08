@@ -35,13 +35,16 @@ public class HtmlExportService {
         String contentHtml = documentRenderer.renderContentHtml(note.contentMarkdown());
         // PDF'te bu boşluğu @page margin veriyor (bkz. PdfExportService); tarayıcıda @page
         // görüntülerken uygulanmıyor, o yüzden burada .page'e ayrıca padding ekleniyor -
-        // içerik/logo pencere kenarına yapışmasın.
-        String css = fontFaceCss() + documentRenderer.sharedCss() + ".page { padding: 56px 40px; }";
+        // içerik/logo pencere kenarına yapışmasın. Alt padding ayrıca sabit footer-bar'ın
+        // (bkz. renderFooterHtml) son satırların üzerine binmemesi için diğerlerinden geniş.
+        String css = fontFaceCss() + documentRenderer.sharedCss()
+                + ".page { padding: 56px 40px 64px 40px; }";
 
         String html = "<!doctype html><html lang=\"tr\"><head><meta charset=\"utf-8\">"
                 + "<title>" + documentRenderer.escapeHtml(note.version()) + " - Sürüm Notu</title>"
                 + "<style>" + css + "</style></head><body>"
                 + documentRenderer.renderBodyHtml(note, contentHtml)
+                + documentRenderer.renderFooterHtml()
                 + "</body></html>";
 
         return html.getBytes(StandardCharsets.UTF_8);
