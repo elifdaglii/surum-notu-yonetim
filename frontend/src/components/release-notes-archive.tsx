@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
-import { FileCode, FileDown, Search } from "lucide-react";
+import { FileCode, FileDown, Search, SlidersHorizontal } from "lucide-react";
 import { fetchCategories } from "@/api/categories";
 import { downloadReleaseNoteHtml, downloadReleaseNotePdf, fetchReleaseNotes } from "@/api/releaseNotes";
 import { getCategoryColor, formatReleaseDate } from "@/lib/release-notes";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -20,10 +21,30 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-// "Yazan" dropdown'ının seçenek listesi için sentinel değer - Radix Select boş string
-// value kabul etmiyor, "Tümü" seçeneğini bu özel değerle temsil edip onValueChange'de
-// null'a çeviriyoruz (authorFilter state'i null/username olarak tutuluyor).
+// "Yazan"/"Ay" dropdown'larının seçenek listesi için sentinel değerler - Radix Select
+// boş string value kabul etmiyor, "Tümü" seçeneğini bu özel değerlerle temsil edip
+// onValueChange'de null'a çeviriyoruz (authorFilter/monthFilter state'i null/gerçek
+// değer olarak tutuluyor).
 const ALL_AUTHORS_VALUE = "__all__";
+const ALL_MONTHS_VALUE = "__all_months__";
+
+type SortOrder = "desc" | "asc";
+// Backend zaten findAllByOrderByReleaseDateDesc vb. ile yeni->eski döndürüyor (bkz.
+// ReleaseNoteRepository) - "varsayılan" sıralama bu, "Filtreler" göstergesi de buna göre
+// aktif/pasif kararı veriyor.
+const DEFAULT_SORT_ORDER: SortOrder = "desc";
+
+// Bir sürüm notunun yayın tarihinden "YYYY-MM" anahtarı üretir - "Ay" filtresindeki
+// seçenekleri tekilleştirmek ve seçili değerle karşılaştırmak için kullanılıyor.
+function getMonthKey(isoDate: string): string {
+  const date = new Date(isoDate);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// "YYYY-MM" anahtarını dropdown'da gösterilecek "Ağustos 2026" gibi bir etikete çevirir.
+function getMonthLabel(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString("tr-TR", { month: "long", year: "numeric" });
+}
 
 type ReleaseNotesArchiveProps = {
   token: string;
@@ -73,6 +94,8 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
 
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [authorFilter, setAuthorFilter] = useState<string | null>(null);
+  const [monthFilter, setMonthFilter] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(DEFAULT_SORT_ORDER);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Detay modalında gösterilen not (kart tıklanınca set edilir, null ise modal kapalı).
@@ -137,21 +160,47 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
     return Array.from(unique).sort((a, b) => a.localeCompare(b, "tr"));
   }, [notes]);
 
+  // "Ay" dropdown'ının seçenekleri: notlardaki yayın tarihlerinden çıkarılan benzersiz
+  // ay/yıl kombinasyonları, en yeniden en eskiye sıralı (varsayılan sıralamayla tutarlı).
+  const months = useMemo(() => {
+    const labelByKey = new Map<string, string>();
+    notes.forEach((note) => {
+      const key = getMonthKey(note.releaseDate);
+      if (!labelByKey.has(key)) labelByKey.set(key, getMonthLabel(note.releaseDate));
+    });
+    return Array.from(labelByKey.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([key, label]) => ({ key, label }));
+  }, [notes]);
+
+  // Popover kapalıyken de kullanıcı aktif bir filtre olduğunu fark edebilsin diye
+  // "Filtreler" butonu üzerinde gösterilen sayı - kategori pili/arama kutusu ana satırda
+  // zaten görünür olduğu için burada sayılmıyor, sadece panel içindekiler.
+  const activePanelFilterCount =
+    (authorFilter ? 1 : 0) + (monthFilter ? 1 : 0) + (sortOrder !== DEFAULT_SORT_ORDER ? 1 : 0);
+
   // Backend'e ayrıca bir "arama/filtre" isteği atmıyoruz: liste zaten tek seferde
-  // çekiliyor, kategori/yazan/metin filtresi client-side. Not sayısı büyüdükçe bu
-  // backend'e taşınabilir ama şu an için gereksiz bir round-trip'ten kaçınıyoruz.
+  // çekiliyor, kategori/yazan/ay/metin filtresi ve sıralama client-side. Not sayısı
+  // büyüdükçe bu backend'e taşınabilir ama şu an için gereksiz bir round-trip'ten
+  // kaçınıyoruz.
   const filteredNotes = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return notes.filter((note) => {
+    const filtered = notes.filter((note) => {
       const matchesFilter = !activeFilter || note.category?.name === activeFilter;
       const matchesAuthor = !authorFilter || note.createdByUsername === authorFilter;
+      const matchesMonth = !monthFilter || getMonthKey(note.releaseDate) === monthFilter;
       const matchesSearch =
         !query ||
         note.version.toLowerCase().includes(query) ||
         note.contentMarkdown.toLowerCase().includes(query);
-      return matchesFilter && matchesAuthor && matchesSearch;
+      return matchesFilter && matchesAuthor && matchesMonth && matchesSearch;
     });
-  }, [notes, activeFilter, authorFilter, searchQuery]);
+
+    return [...filtered].sort((a, b) => {
+      const diff = new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime();
+      return sortOrder === "asc" ? diff : -diff;
+    });
+  }, [notes, activeFilter, authorFilter, monthFilter, sortOrder, searchQuery]);
 
   // Kartlardaki ve detay modalındaki "X tarafından" yazısına tıklanınca çağrılır -
   // "Yazan" dropdown'uyla aynı state'i (authorFilter) set eder, ayrı bir filtre
@@ -192,39 +241,108 @@ export function ReleaseNotesArchive({ token, reloadSignal, role, currentUsername
               {category.name}
             </button>
           ))}
-
-          {authors.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">Yazan:</span>
-              <Select
-                value={authorFilter ?? ALL_AUTHORS_VALUE}
-                onValueChange={(value) => setAuthorFilter(value === ALL_AUTHORS_VALUE ? null : value)}
-              >
-                <SelectTrigger size="sm" className="h-7 w-auto min-w-[8rem]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL_AUTHORS_VALUE}>Tümü</SelectItem>
-                  {authors.map((author) => (
-                    <SelectItem key={author} value={author}>
-                      {author}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Sürüm notlarında ara..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Sürüm notlarında ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="outline" className="relative gap-1.5">
+                <SlidersHorizontal className="size-4" />
+                Filtreler
+                {activePanelFilterCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                    {activePanelFilterCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="flex flex-col gap-4">
+              {authors.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Yazan</span>
+                  <Select
+                    value={authorFilter ?? ALL_AUTHORS_VALUE}
+                    onValueChange={(value) => setAuthorFilter(value === ALL_AUTHORS_VALUE ? null : value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_AUTHORS_VALUE}>Tümü</SelectItem>
+                      {authors.map((author) => (
+                        <SelectItem key={author} value={author}>
+                          {author}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {months.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Ay</span>
+                  <Select
+                    value={monthFilter ?? ALL_MONTHS_VALUE}
+                    onValueChange={(value) => setMonthFilter(value === ALL_MONTHS_VALUE ? null : value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_MONTHS_VALUE}>Tümü</SelectItem>
+                      {months.map((month) => (
+                        <SelectItem key={month.key} value={month.key}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Sıralama</span>
+                <div className="inline-flex rounded-lg border border-border p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setSortOrder("desc")}
+                    className={cn(
+                      "flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                      sortOrder === "desc"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    Yeni → Eski
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSortOrder("asc")}
+                    className={cn(
+                      "flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                      sortOrder === "asc"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    Eski → Yeni
+                  </button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
