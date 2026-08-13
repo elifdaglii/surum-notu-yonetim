@@ -72,9 +72,9 @@ export function ResetPasswordForm({ initialToken, onSuccess }: ResetPasswordForm
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="reset-token"
-          className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+          className="text-xs font-medium tracking-wide text-muted-foreground"
         >
-          Token
+          TOKEN
         </label>
         <Input
           id="reset-token"
@@ -94,9 +94,9 @@ export function ResetPasswordForm({ initialToken, onSuccess }: ResetPasswordForm
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="reset-new-password"
-          className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+          className="text-xs font-medium tracking-wide text-muted-foreground"
         >
-          Yeni şifre
+          YENİ ŞİFRE
         </label>
         <Input
           id="reset-new-password"
@@ -116,9 +116,9 @@ export function ResetPasswordForm({ initialToken, onSuccess }: ResetPasswordForm
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="reset-confirm-password"
-          className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+          className="text-xs font-medium tracking-wide text-muted-foreground"
         >
-          Yeni şifre (tekrar)
+          YENİ ŞİFRE (TEKRAR)
         </label>
         <Input
           id="reset-confirm-password"

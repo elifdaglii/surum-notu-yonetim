@@ -241,9 +241,9 @@ export function AddReleaseNoteDialog({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="release-version"
-                className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                className="text-xs font-medium tracking-wide text-muted-foreground"
               >
-                Sürüm Numarası
+                SÜRÜM NUMARASI
               </label>
               <Input
                 id="release-version"
@@ -266,9 +266,9 @@ export function AddReleaseNoteDialog({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="release-date"
-                className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                className="text-xs font-medium tracking-wide text-muted-foreground"
               >
-                Yayınlanma Tarihi
+                YAYINLANMA TARİHİ
               </label>
               <Input
                 id="release-date"
@@ -282,9 +282,9 @@ export function AddReleaseNoteDialog({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="release-category"
-                className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                className="text-xs font-medium tracking-wide text-muted-foreground"
               >
-                Kategori
+                KATEGORİ
               </label>
               <Select
                 value={categoryId}
@@ -313,9 +313,9 @@ export function AddReleaseNoteDialog({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="release-content"
-                className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                className="text-xs font-medium tracking-wide text-muted-foreground"
               >
-                İçerik
+                İÇERİK
               </label>
               {/* Sol/sağ split - üst üste DEĞİL. Sol: ham Markdown yazılan düz textarea
                   (syntax highlighting yok, bilinçli olarak). Sağ: marked + DOMPurify ile

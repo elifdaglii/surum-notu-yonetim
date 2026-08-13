@@ -90,8 +90,8 @@ function LoginPage({ onLoginSuccess, onForgotPassword }: LoginPageProps) {
         <form onSubmit={handleSubmit} noValidate>
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="username" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Kullanıcı adı
+              <label htmlFor="username" className="text-xs font-medium tracking-wide text-muted-foreground">
+                KULLANICI ADI
               </label>
               <Input
                 id="username"
@@ -113,8 +113,8 @@ function LoginPage({ onLoginSuccess, onForgotPassword }: LoginPageProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Şifre
+              <label htmlFor="password" className="text-xs font-medium tracking-wide text-muted-foreground">
+                ŞİFRE
               </label>
               <div className="relative">
                 <Input

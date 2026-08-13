@@ -57,9 +57,9 @@ export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="forgot-username"
-          className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+          className="text-xs font-medium tracking-wide text-muted-foreground"
         >
-          Kullanıcı adı
+          KULLANICI ADI
         </label>
         <Input
           id="forgot-username"
