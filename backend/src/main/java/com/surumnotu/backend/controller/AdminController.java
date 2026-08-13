@@ -1,5 +1,6 @@
 package com.surumnotu.backend.controller;
 
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -9,11 +10,13 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.surumnotu.backend.dto.CreateUserRequest;
+import com.surumnotu.backend.dto.UpdateUserRequest;
 import com.surumnotu.backend.dto.UserResponse;
 import com.surumnotu.backend.service.UserManagementService;
 
@@ -46,6 +49,15 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponse>> listUsers() {
         return ResponseEntity.ok(userManagementService.listUsers());
+    }
+
+    @PutMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request,
+                                                     Principal principal) {
+        UserResponse updated = userManagementService.updateUser(
+                id, request.username(), request.password(), request.role(), principal.getName());
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/users/{id}")

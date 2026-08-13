@@ -41,6 +41,38 @@ public class UserManagementService {
                 .toList();
     }
 
+    // currentUsername: istegi yapan (giris yapmis) admin'in kullanici adi - hem
+    // "kendi rolunu dusuremez" kontrolu hem de son ADMIN korumasi icin lazim.
+    public UserResponse updateUser(Long id, String username, String rawPassword, Role role, String currentUsername) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanici bulunamadi: " + id));
+
+        if (userRepository.existsByUsernameAndIdNot(username, id)) {
+            throw new UsernameAlreadyExistsException(username);
+        }
+
+        boolean isSelf = user.getUsername().equals(currentUsername);
+        boolean isDemotingFromAdmin = user.getRole() == Role.ADMIN && role != Role.ADMIN;
+
+        // Admin kendi rolunu USER'a dusuremez - digger admin sayisindan bagimsiz,
+        // oturum ortasinda kendi kendini yetkisiz birakmasin diye kosulsuz engelleniyor.
+        if (isSelf && isDemotingFromAdmin) {
+            throw new LastAdminException("Kendi admin rolunuzu kaldiramazsiniz");
+        }
+
+        if (isDemotingFromAdmin && userRepository.countByRole(Role.ADMIN) <= 1) {
+            throw new LastAdminException("Sistemde en az bir ADMIN kalmali, bu kullanicinin rolu degistirilemez");
+        }
+
+        user.setUsername(username);
+        user.setRole(role);
+        if (rawPassword != null && !rawPassword.isBlank()) {
+            user.setPassword(passwordEncoder.encode(rawPassword));
+        }
+
+        return toResponse(userRepository.save(user));
+    }
+
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanici bulunamadi: " + id));

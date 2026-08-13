@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { createUser, deleteUser, fetchUsers } from "../api/admin";
 import { createCategory, deleteCategory, fetchCategories } from "../api/categories";
 import type { AppUser, Category, Role } from "../types";
@@ -7,6 +7,7 @@ import type { AppUser, Category, Role } from "../types";
 import { getUsernameFromToken } from "@/lib/jwt";
 import { AddReleaseNoteDialog } from "@/components/add-release-note-dialog";
 import { AdminSidebar, type AdminTab } from "@/components/admin-sidebar";
+import { EditUserDialog } from "@/components/edit-user-dialog";
 import { ReleaseNotesArchive } from "@/components/release-notes-archive";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
   const [listError, setListError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [editingUser, setEditingUser] = useState<AppUser | null>(null);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -243,6 +245,16 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                               <Badge variant="outline">{u.role}</Badge>
                             </TableCell>
                             <TableCell className="text-right">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditingUser(u)}
+                                aria-label={`${u.username} kullanıcısını düzenle`}
+                                className="text-muted-foreground"
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
                               {/* Metin butonu yerine sadece ikon: varsayılan nötr/muted renk, hover'da
                                   destructive metin rengine + destructive-container'ın %10 opacity bg'sine
                                   geçiyor (iki ayrı token: biri metin/ikon, diğeri hover zemin tonu).
@@ -279,8 +291,8 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                 <form onSubmit={handleCreateUser}>
                   <CardContent className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="new-username" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Kullanıcı adı
+                      <label htmlFor="new-username" className="text-xs font-medium tracking-wide text-muted-foreground">
+                        KULLANICI ADI
                       </label>
                       <Input
                         id="new-username"
@@ -292,8 +304,8 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="new-password" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Şifre
+                      <label htmlFor="new-password" className="text-xs font-medium tracking-wide text-muted-foreground">
+                        ŞİFRE
                       </label>
                       <Input
                         id="new-password"
@@ -306,8 +318,8 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="new-role" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Rol
+                      <label htmlFor="new-role" className="text-xs font-medium tracking-wide text-muted-foreground">
+                        ROL
                       </label>
                       <Select value={role} onValueChange={(value) => setRole(value as Role)}>
                         <SelectTrigger id="new-role" className="w-full">
@@ -392,8 +404,8 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                 <form onSubmit={handleCreateCategory}>
                   <CardContent className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="new-category-name" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Kategori adı
+                      <label htmlFor="new-category-name" className="text-xs font-medium tracking-wide text-muted-foreground">
+                        KATEGORİ ADI
                       </label>
                       <Input
                         id="new-category-name"
@@ -421,6 +433,21 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
         </div>
         )}
       </main>
+
+      <EditUserDialog
+        token={token}
+        user={editingUser}
+        currentUsername={loggedInUsername}
+        open={editingUser !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setEditingUser(null);
+          }
+        }}
+        onSaved={(updated) => {
+          setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+        }}
+      />
     </div>
   );
 }

@@ -48,6 +48,45 @@ export async function createUser(token: string, input: CreateUserInput): Promise
   return (await response.json()) as AppUser;
 }
 
+type UpdateUserInput = {
+  username: string;
+  // null: şifre değişmesin (backend'de opsiyonel alan). Doluysa en az 8 karakter olmalı.
+  password: string | null;
+  role: Role;
+};
+
+/**
+ * PUT /api/admin/users/{id} isteği atar. Sadece ADMIN token'ı ile çalışır.
+ * Backend 409'u üç farklı senaryoda dönebiliyor (kullanıcı adı çakışması, admin kendi
+ * rolünü düşürüyor, sistemde tek admin kalıyor) - jenerik tek bir mesaj yerine backend'in
+ * gövdede döndürdüğü ayırt edici Türkçe mesajı doğrudan gösteriyoruz.
+ */
+export async function updateUser(token: string, id: number, input: UpdateUserInput): Promise<AppUser> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (response.status === 409) {
+    const message = await response.text();
+    throw new Error(message || "Kullanıcı güncellenemedi");
+  }
+
+  if (response.status === 404) {
+    throw new Error("Kullanıcı bulunamadı, zaten silinmiş olabilir");
+  }
+
+  if (!response.ok) {
+    throw new Error("Kullanıcı güncellenemedi. Bilgileri kontrol edin (şifre en az 8 karakter olmalı)");
+  }
+
+  return (await response.json()) as AppUser;
+}
+
 /**
  * DELETE /api/admin/users/{id} isteği atar. Sadece ADMIN token'ı ile çalışır.
  */
