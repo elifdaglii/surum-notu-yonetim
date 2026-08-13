@@ -208,9 +208,13 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
         )}
 
         {(activeTab === "users" || activeTab === "categories") && (
-        <div className="mx-auto flex max-w-2xl flex-col gap-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6">
+          {/* Liste geniş sütunda, "Yeni ... Ekle" formu sabit genişlikte yan panelde -
+              form alanları (kullanıcı adı/şifre/rol gibi kısa input'lar) tam genişliğe
+              gerilirse okunması zorlaşacağı için max-w'yi büyütmek yerine bu iki sütunlu
+              düzen tercih edildi; releaseNotes sekmesiyle (max-w-5xl) de tutarlı. */}
           {activeTab === "users" && (
-            <>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
               <Card>
                 <CardHeader>
                   <CardTitle>Kullanıcılar</CardTitle>
@@ -319,18 +323,18 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                     {formError && <p className="text-sm text-destructive">{formError}</p>}
                   </CardContent>
 
-                  <CardFooter>
+                  <CardFooter className="mt-4">
                     <Button type="submit" disabled={submitting} className="w-full">
                       {submitting ? "Ekleniyor..." : "Kullanıcı Ekle"}
                     </Button>
                   </CardFooter>
                 </form>
               </Card>
-            </>
+            </div>
           )}
 
           {activeTab === "categories" && (
-            <>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
               <Card>
                 <CardHeader>
                   <CardTitle>Kategoriler</CardTitle>
@@ -405,14 +409,14 @@ function AdminPage({ token, onLogout }: AdminPageProps) {
                     )}
                   </CardContent>
 
-                  <CardFooter>
+                  <CardFooter className="mt-4">
                     <Button type="submit" disabled={submittingCategory} className="w-full">
                       {submittingCategory ? "Ekleniyor..." : "Kategori Ekle"}
                     </Button>
                   </CardFooter>
                 </form>
               </Card>
-            </>
+            </div>
           )}
         </div>
         )}

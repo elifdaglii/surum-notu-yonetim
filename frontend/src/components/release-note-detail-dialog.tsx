@@ -130,23 +130,28 @@ export function ReleaseNoteDetailDialog({
                 </DialogDescription>
               </DialogHeader>
 
-              {note.category && (
-                <div>
-                  <Badge variant="outline" className={getCategoryColor(note.category.name).badgeClassName}>
-                    {note.category.name}
-                  </Badge>
-                </div>
-              )}
-
-              <div className="max-h-[22rem] overflow-y-auto rounded-lg border border-input bg-muted/30 p-3 text-sm [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_h1]:mb-1 [&_h1]:text-base [&_h1]:font-bold [&_h2]:mb-1 [&_h2]:text-sm [&_h2]:font-bold [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_li]:mb-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5">
-                {previewHtml ? (
-                  <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
-                ) : (
-                  <p className="text-muted-foreground">İçerik yok.</p>
+              {/* Header ve footer arasındaki her şey burada - DialogContent'in
+                  max-h-[90vh] sınırına ulaşınca sadece bu blok kayar, footer
+                  (Düzenle/Sil) her zaman ekranda sabit kalır. */}
+              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+                {note.category && (
+                  <div>
+                    <Badge variant="outline" className={getCategoryColor(note.category.name).badgeClassName}>
+                      {note.category.name}
+                    </Badge>
+                  </div>
                 )}
-              </div>
 
-              {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+                <div className="rounded-lg border border-input bg-muted/30 p-3 text-sm [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_h1]:mb-1 [&_h1]:text-base [&_h1]:font-bold [&_h2]:mb-1 [&_h2]:text-sm [&_h2]:font-bold [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_li]:mb-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5">
+                  {previewHtml ? (
+                    <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                  ) : (
+                    <p className="text-muted-foreground">İçerik yok.</p>
+                  )}
+                </div>
+
+                {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+              </div>
 
               {canManage && (
                 <DialogFooter>

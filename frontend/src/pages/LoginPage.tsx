@@ -152,7 +152,7 @@ function LoginPage({ onLoginSuccess, onForgotPassword }: LoginPageProps) {
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col gap-3">
+          <CardFooter className="mt-4 flex flex-col gap-3">
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>

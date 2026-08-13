@@ -233,7 +233,11 @@ export function AddReleaseNoteDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* form, DialogContent'in max-h-[90vh] sınırı içinde kalan kısmı dolduruyor;
+              footer form'un sonunda ama kaydırma alanının DIŞINDA - böylece içerik
+              uzayınca sadece alanlar kayar, İptal/Kaydet her zaman görünür kalır. */}
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1 -m-1">
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="release-version"
@@ -345,6 +349,7 @@ export function AddReleaseNoteDialog({
             </div>
 
             {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+            </div>
 
             <DialogFooter>
               <DialogClose asChild>
