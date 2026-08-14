@@ -100,7 +100,6 @@ public class ReleaseNoteDocumentRenderer {
                 + "<div class=\"card\">"
                 + renderHeaderHtml(note)
                 + "<hr class=\"divider\" />"
-                + "<h2 class=\"section-title\">Bu Sürümde Neler Var</h2>"
                 + "<div class=\"content\">" + contentHtml + "</div>"
                 + "</div>"
                 + "</div>";
@@ -137,7 +136,6 @@ public class ReleaseNoteDocumentRenderer {
                 + ".version { font-size: 15pt; font-weight: 700; color: " + INK + "; margin: 0; }"
                 + ".meta { font-size: 9pt; color: " + MUTED_GRAY + "; margin: 4pt 0 0 0; }"
                 + ".divider { border: none; border-top: 1pt solid " + BORDER_GRAY + "; margin: 18pt 0 16pt 0; }"
-                + ".section-title { font-size: 12pt; font-weight: 700; color: " + INK + "; margin: 0 0 10pt 0; }"
                 + ".content h1, .content h2, .content h3 { color: " + INK + "; font-weight: 700; margin: 14pt 0 6pt 0; }"
                 + ".content h1 { font-size: 14pt; }"
                 + ".content h2 { font-size: 12.5pt; }"
