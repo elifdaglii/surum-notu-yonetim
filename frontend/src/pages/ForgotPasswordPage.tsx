@@ -22,15 +22,15 @@ type ForgotPasswordPageProps = {
 type Step = "request" | "reset" | "done";
 
 const STEP_DESCRIPTIONS: Record<Step, string> = {
-  request: "Kullanıcı adınızı girin, sıfırlama token'ınızı oluşturalım",
-  reset: "Token'ı ve yeni şifrenizi girin",
+  request: "Kullanıcı adınızı girin, doğrulama kodunuzu oluşturalım",
+  reset: "Kodu ve yeni şifrenizi girin",
   done: "Şifreniz güncellendi",
 };
 
 /**
  * "Şifremi Unuttum" akışı - login sayfasıyla aynı tam sayfa stilinde, LoginPage'e
  * paralel ayrı bir "sayfa" (bu projede router yok, App.tsx'te view state'iyle
- * gösteriliyor). Email/SMTP olmadığı için token adım 1'de doğrudan ekranda
+ * gösteriliyor). Email/SMTP olmadığı için 6 haneli kod adım 1'de doğrudan ekranda
  * gösteriliyor (SNYS-5).
  */
 function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {

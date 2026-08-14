@@ -1,9 +1,9 @@
 package com.surumnotu.backend.service;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,8 +18,13 @@ import com.surumnotu.backend.repository.UserRepository;
 @Service
 public class AuthService {
 
-    // Sifremi unuttum akisinda uretilen token'in gecerlilik suresi.
+    // Sifremi unuttum akisinda uretilen kodun gecerlilik suresi.
     private static final Duration RESET_TOKEN_VALIDITY = Duration.ofMinutes(15);
+
+    // 6 haneli dogrulama kodu icin ust sinir (000000-999999).
+    private static final int RESET_CODE_BOUND = 1_000_000;
+
+    private final SecureRandom secureRandom = new SecureRandom();
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -58,21 +63,29 @@ public class AuthService {
     }
 
     // Kullanici bulunamasa da her zaman ayni genel mesaji donuyoruz (username
-    // enumeration'a karsi). Token, kullanici bulunduysa dolduruluyor - email
+    // enumeration'a karsi). Kod, kullanici bulunduysa dolduruluyor - email
     // gonderimi yok, dev-mode olarak dogrudan response'ta donuluyor.
     public ForgotPasswordResponse forgotPassword(String username) {
         Optional<User> maybeUser = userRepository.findByUsername(username);
-        String token = null;
+        String code = null;
 
         if (maybeUser.isPresent()) {
             User user = maybeUser.get();
-            token = UUID.randomUUID().toString();
-            user.setResetToken(token);
+            code = generateResetCode();
+            user.setResetToken(code);
             user.setResetTokenExpiry(Instant.now().plus(RESET_TOKEN_VALIDITY));
             userRepository.save(user);
         }
 
-        return new ForgotPasswordResponse("Kullanici sistemde mevcutsa bir sifirlama token'i olusturuldu", token);
+        return new ForgotPasswordResponse("Kullanici sistemde mevcutsa bir sifirlama kodu olusturuldu", code);
+    }
+
+    // 6 haneli, sifir dolgulu sayisal dogrulama kodu (orn. "042913") - SecureRandom
+    // ile uretiliyor, tahmin edilebilirligi UUID kadar dusuk olmasa da kisa sureli
+    // (15 dk) ve tek kullanimlik oldugu icin bu kabul edilebilir bir tradeoff.
+    private String generateResetCode() {
+        int code = secureRandom.nextInt(RESET_CODE_BOUND);
+        return String.format("%06d", code);
     }
 
     public void resetPassword(String token, String newPassword) {

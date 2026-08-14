@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 
 type ResetPasswordFormProps = {
   // Bir önceki ekrandan (ForgotPasswordForm) geliyorsa önceden dolu - elle de
-  // değiştirilebilir (kullanıcı token'ı başka bir yerden kopyalayıp gelmiş olabilir).
+  // değiştirilebilir (kullanıcı kodu başka bir yerden kopyalayıp gelmiş olabilir).
   initialToken: string;
   // Şifre başarıyla güncellendiğinde çağrılır - ForgotPasswordPage başarı ekranına geçer.
   onSuccess: () => void;
@@ -19,8 +19,9 @@ type FieldErrors = {
 };
 
 /**
- * "Şifremi Unuttum" akışının ikinci adımı: token + yeni şifre (+ tekrar) girilir.
- * Token geçersiz/süresi dolmuşsa backend 400 döner, mesaj burada gösterilir.
+ * "Şifremi Unuttum" akışının ikinci adımı: 6 haneli doğrulama kodu + yeni şifre
+ * (+ tekrar) girilir. Kod geçersiz/süresi dolmuşsa backend 400 döner, mesaj burada
+ * gösterilir.
  */
 export function ResetPasswordForm({ initialToken, onSuccess }: ResetPasswordFormProps) {
   const [token, setToken] = useState(initialToken);
@@ -34,7 +35,9 @@ export function ResetPasswordForm({ initialToken, onSuccess }: ResetPasswordForm
   function validate(): boolean {
     const errors: FieldErrors = {};
     if (!token.trim()) {
-      errors.token = "Token boş olamaz";
+      errors.token = "Kod boş olamaz";
+    } else if (!/^\d{6}$/.test(token.trim())) {
+      errors.token = "Kod 6 haneli sayısal bir değer olmalı";
     }
     if (!newPassword) {
       errors.newPassword = "Şifre boş olamaz";
@@ -74,19 +77,22 @@ export function ResetPasswordForm({ initialToken, onSuccess }: ResetPasswordForm
           htmlFor="reset-token"
           className="text-xs font-medium tracking-wide text-muted-foreground"
         >
-          TOKEN
+          DOĞRULAMA KODU
         </label>
         <Input
           id="reset-token"
           type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
           value={token}
           onChange={(e) => {
-            setToken(e.target.value);
+            setToken(e.target.value.replace(/\D/g, "").slice(0, 6));
             if (fieldErrors.token) setFieldErrors((prev) => ({ ...prev, token: undefined }));
           }}
           aria-invalid={!!fieldErrors.token}
           disabled={loading}
-          className="font-mono text-sm"
+          className="font-mono text-sm tracking-[0.3em]"
         />
         {fieldErrors.token && <p className="text-sm text-destructive">{fieldErrors.token}</p>}
       </div>

@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type ForgotPasswordFormProps = {
-  // Backend token döndüğünde (kullanıcı bulunduysa) çağrılır - ResetPasswordForm'a
-  // geçiş için ForgotPasswordPage'e token'ı iletir. Kullanıcı bulunamadıysa (token
+  // Backend kod döndüğünde (kullanıcı bulunduysa) çağrılır - ResetPasswordForm'a
+  // geçiş için ForgotPasswordPage'e kodu iletir. Kullanıcı bulunamadıysa (kod
   // null) çağrılmaz, bu ekranda sadece genel başarı mesajı gösterilir.
   onTokenGenerated: (token: string) => void;
 };
 
 /**
  * "Şifremi Unuttum" akışının ilk adımı: kullanıcı adı girilir, backend'den üretilen
- * tek kullanımlık token ekranda gösterilir (email yok - dev-mode gösterim, SNYS-5).
+ * 6 haneli tek kullanımlık doğrulama kodu ekranda gösterilir (email yok - dev-mode
+ * gösterim, SNYS-5).
  */
 export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps) {
   const [username, setUsername] = useState("");
@@ -83,15 +84,15 @@ export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps
           {token && (
             <>
               <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded-md bg-background px-2.5 py-1.5 font-mono text-xs text-foreground ring-1 ring-foreground/10">
+                <code className="flex-1 truncate rounded-md bg-background px-2.5 py-1.5 text-center font-mono text-sm tracking-[0.3em] text-foreground ring-1 ring-foreground/10">
                   {token}
                 </code>
-                <Button type="button" variant="outline" size="icon-sm" onClick={handleCopy} aria-label="Token'ı kopyala">
+                <Button type="button" variant="outline" size="icon-sm" onClick={handleCopy} aria-label="Kodu kopyala">
                   {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Bu token 15 dakika geçerlidir. Gerçek bir uygulamada bu token e-posta ile
+                Bu kod 15 dakika geçerlidir. Gerçek bir uygulamada bu kod e-posta ile
                 gönderilir; burada e-posta altyapısı olmadığı için doğrudan gösteriliyor.
               </p>
               <Button type="button" onClick={() => onTokenGenerated(token)} className="w-full">
@@ -104,7 +105,7 @@ export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps
 
       {!token && (
         <Button type="submit" disabled={loading} className="w-full">
-          {loading ? "Oluşturuluyor..." : "Sıfırlama Token'ı Oluştur"}
+          {loading ? "Oluşturuluyor..." : "Doğrulama Kodu Oluştur"}
         </Button>
       )}
     </form>
