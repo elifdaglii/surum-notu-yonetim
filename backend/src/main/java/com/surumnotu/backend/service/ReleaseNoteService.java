@@ -132,7 +132,7 @@ public class ReleaseNoteService {
     // satirlari/satir sonlarini tek boslugta topluyor, bu da markdown'un blok yapisini
     // (basliklar, madde listeleri) bozuyor. prettyPrint(false) ile whitespace/satir
     // sonlari oldugu gibi korunuyor, HTML tag'leri (Safelist.none()) yine de temizleniyor.
-    private String sanitize(String rawContent) {
+    String sanitize(String rawContent) {
         Document.OutputSettings outputSettings = new Document.OutputSettings().prettyPrint(false);
         return Jsoup.clean(rawContent, "", Safelist.none(), outputSettings);
     }

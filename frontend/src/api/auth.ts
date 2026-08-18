@@ -60,19 +60,26 @@ export async function forgotPassword(username: string): Promise<ForgotPasswordRe
 }
 
 /**
- * POST /api/auth/reset-password isteği atar. Kod geçersiz/süresi dolmuşsa
- * backend 400 döner.
+ * POST /api/auth/reset-password isteği atar. Backend deneme sayacını hesap
+ * bazında tuttuğu için username de gönderiliyor (bkz. backend
+ * AuthService.resetPassword). Kod geçersiz/süresi dolmuşsa ya da deneme limiti
+ * aşılmışsa backend 400 ve duruma özel bir mesaj döner - o mesaj burada
+ * doğrudan kullanıcıya gösteriliyor.
  */
-export async function resetPassword(token: string, newPassword: string): Promise<void> {
+export async function resetPassword(
+  username: string,
+  token: string,
+  newPassword: string,
+): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ token, newPassword }),
+    body: JSON.stringify({ username, token, newPassword }),
   });
 
   if (!response.ok) {
-    throw new Error("Şifre güncellenemedi. Kod geçersiz veya süresi dolmuş olabilir");
+    throw new Error(await response.text() || "Şifre güncellenemedi. Kod geçersiz veya süresi dolmuş olabilir");
   }
 }

@@ -19,10 +19,19 @@ import com.surumnotu.backend.repository.UserRepository;
 public class AuthService {
 
     // Sifremi unuttum akisinda uretilen kodun gecerlilik suresi.
-    private static final Duration RESET_TOKEN_VALIDITY = Duration.ofMinutes(15);
+    private static final Duration RESET_TOKEN_VALIDITY = Duration.ofMinutes(5);
 
     // 6 haneli dogrulama kodu icin ust sinir (000000-999999).
     private static final int RESET_CODE_BOUND = 1_000_000;
+
+    // Ayni hesap icin art arda izin verilen maksimum yanlis kod denemesi - asilirsa
+    // kod gecersiz kilinir (bkz. resetPassword).
+    private static final int MAX_RESET_ATTEMPTS = 5;
+
+    // Rate limiting: ayni hesap icin iki kod uretme istegi arasinda beklenmesi
+    // gereken minimum sure - asilmadan gelen istekler yeni kod uretmez (bkz.
+    // forgotPassword).
+    private static final Duration RESET_REQUEST_COOLDOWN = Duration.ofMinutes(1);
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -63,18 +72,27 @@ public class AuthService {
     }
 
     // Kullanici bulunamasa da her zaman ayni genel mesaji donuyoruz (username
-    // enumeration'a karsi). Kod, kullanici bulunduysa dolduruluyor - email
-    // gonderimi yok, dev-mode olarak dogrudan response'ta donuluyor.
+    // enumeration'a karsi). Kod, kullanici bulunduysa VE rate limit'e takilmadiysa
+    // dolduruluyor - email gonderimi yok, dev-mode olarak dogrudan response'ta
+    // donuluyor. Rate limit'e takilan istekler de (enumeration'a karsi) "kullanici
+    // yok" ile birebir ayni yaniti aliyor - kod uretmeden sessizce yok sayiliyor.
     public ForgotPasswordResponse forgotPassword(String username) {
         Optional<User> maybeUser = userRepository.findByUsername(username);
         String code = null;
 
         if (maybeUser.isPresent()) {
             User user = maybeUser.get();
-            code = generateResetCode();
-            user.setResetToken(code);
-            user.setResetTokenExpiry(Instant.now().plus(RESET_TOKEN_VALIDITY));
-            userRepository.save(user);
+            boolean rateLimited = user.getResetCodeRequestedAt() != null
+                    && user.getResetCodeRequestedAt().plus(RESET_REQUEST_COOLDOWN).isAfter(Instant.now());
+
+            if (!rateLimited) {
+                code = generateResetCode();
+                user.setResetToken(code);
+                user.setResetTokenExpiry(Instant.now().plus(RESET_TOKEN_VALIDITY));
+                user.setResetCodeAttempts(0);
+                user.setResetCodeRequestedAt(Instant.now());
+                userRepository.save(user);
+            }
         }
 
         return new ForgotPasswordResponse("Kullanici sistemde mevcutsa bir sifirlama kodu olusturuldu", code);
@@ -82,24 +100,54 @@ public class AuthService {
 
     // 6 haneli, sifir dolgulu sayisal dogrulama kodu (orn. "042913") - SecureRandom
     // ile uretiliyor, tahmin edilebilirligi UUID kadar dusuk olmasa da kisa sureli
-    // (15 dk) ve tek kullanimlik oldugu icin bu kabul edilebilir bir tradeoff.
+    // (5 dk), tek kullanimlik ve 5 yanlis denemede gecersiz kilindigi icin bu kabul
+    // edilebilir bir tradeoff.
     private String generateResetCode() {
         int code = secureRandom.nextInt(RESET_CODE_BOUND);
         return String.format("%06d", code);
     }
 
-    public void resetPassword(String token, String newPassword) {
-        User user = userRepository.findByResetToken(token)
-                .orElseThrow(() -> new InvalidResetTokenException("Gecersiz ya da suresi dolmus token"));
+    // Kod artik username uzerinden dogrulaniyor (once findByResetToken kullanilyordu,
+    // ama yanlis kod girildiginde hangi hesabin denemesi oldugu bilinemiyordu - deneme
+    // sayaci hesap bazinda tutuldugu icin username sart oldu).
+    public void resetPassword(String username, String token, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidResetTokenException("Gecersiz kod"));
+
+        if (user.getResetToken() == null) {
+            throw new InvalidResetTokenException("Gecersiz kod");
+        }
 
         if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(Instant.now())) {
-            throw new InvalidResetTokenException("Gecersiz ya da suresi dolmus token");
+            clearResetState(user);
+            userRepository.save(user);
+            throw new InvalidResetTokenException("Kodun suresi doldu, yeni kod isteyin");
+        }
+
+        if (!user.getResetToken().equals(token)) {
+            int attempts = (user.getResetCodeAttempts() == null ? 0 : user.getResetCodeAttempts()) + 1;
+            if (attempts >= MAX_RESET_ATTEMPTS) {
+                clearResetState(user);
+                userRepository.save(user);
+                throw new InvalidResetTokenException(
+                        "Cok fazla yanlis deneme yapildi, kod gecersiz kilindi. Yeni kod isteyin");
+            }
+            user.setResetCodeAttempts(attempts);
+            userRepository.save(user);
+            throw new InvalidResetTokenException("Gecersiz kod");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
-        // Tek kullanimlik: basarili sifirlamadan sonra token temizleniyor.
+        // Tek kullanimlik: basarili sifirlamadan sonra kod temizleniyor.
+        clearResetState(user);
+        userRepository.save(user);
+    }
+
+    // resetToken/resetTokenExpiry/resetCodeAttempts sifirlanir - resetCodeRequestedAt
+    // kasitli olarak ellenmez (rate limit penceresi kod yasam donguslunden bagimsiz).
+    private void clearResetState(User user) {
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
-        userRepository.save(user);
+        user.setResetCodeAttempts(0);
     }
 }

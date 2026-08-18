@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 
 type ForgotPasswordFormProps = {
   // Backend kod döndüğünde (kullanıcı bulunduysa) çağrılır - ResetPasswordForm'a
-  // geçiş için ForgotPasswordPage'e kodu iletir. Kullanıcı bulunamadıysa (kod
+  // geçiş için ForgotPasswordPage'e kodu ve kullanıcı adını iletir (backend artık
+  // deneme sayacını hesap bazında tuttuğu için reset-password isteğinde username
+  // da gerekiyor). Kullanıcı bulunamadıysa ya da rate limit'e takıldıysa (kod
   // null) çağrılmaz, bu ekranda sadece genel başarı mesajı gösterilir.
-  onTokenGenerated: (token: string) => void;
+  onTokenGenerated: (token: string, username: string) => void;
 };
 
 /**
@@ -92,10 +94,15 @@ export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Bu kod 15 dakika geçerlidir. Gerçek bir uygulamada bu kod e-posta ile
-                gönderilir; burada e-posta altyapısı olmadığı için doğrudan gösteriliyor.
+                Bu kod 5 dakika geçerlidir ve en fazla 5 yanlış denemeye izin verir.
+                Gerçek bir uygulamada bu kod e-posta ile gönderilir; burada e-posta
+                altyapısı olmadığı için doğrudan gösteriliyor.
               </p>
-              <Button type="button" onClick={() => onTokenGenerated(token)} className="w-full">
+              <Button
+                type="button"
+                onClick={() => onTokenGenerated(token, username.trim())}
+                className="w-full"
+              >
                 Şifreyi Sıfırla
               </Button>
             </>

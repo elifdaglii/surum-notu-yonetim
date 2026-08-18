@@ -15,8 +15,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // (ayni id) carpisma sanmasin diye id disarida tutuluyor.
     boolean existsByUsernameAndIdNot(String username, Long id);
 
-    Optional<User> findByResetToken(String resetToken);
-
     Optional<User> findFirstByRole(Role role);
 
     boolean existsByRole(Role role);

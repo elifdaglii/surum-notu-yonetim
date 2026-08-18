@@ -36,6 +36,7 @@ const STEP_DESCRIPTIONS: Record<Step, string> = {
 function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
   const [step, setStep] = useState<Step>("request");
   const [token, setToken] = useState("");
+  const [username, setUsername] = useState("");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -55,15 +56,20 @@ function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
         <CardContent>
           {step === "request" && (
             <ForgotPasswordForm
-              onTokenGenerated={(generatedToken) => {
+              onTokenGenerated={(generatedToken, generatedUsername) => {
                 setToken(generatedToken);
+                setUsername(generatedUsername);
                 setStep("reset");
               }}
             />
           )}
 
           {step === "reset" && (
-            <ResetPasswordForm initialToken={token} onSuccess={() => setStep("done")} />
+            <ResetPasswordForm
+              username={username}
+              initialToken={token}
+              onSuccess={() => setStep("done")}
+            />
           )}
 
           {step === "done" && (

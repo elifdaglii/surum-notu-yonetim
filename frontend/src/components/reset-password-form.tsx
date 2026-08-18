@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type ResetPasswordFormProps = {
+  // ForgotPasswordForm'daki (1. adım) kullanıcı adı - backend deneme sayacını
+  // hesap bazında tuttuğu için reset-password isteğinde gönderilmesi gerekiyor.
+  // Kullanıcıya ayrıca bir input olarak gösterilmiyor, 1. adımdan sessizce taşınıyor.
+  username: string;
   // Bir önceki ekrandan (ForgotPasswordForm) geliyorsa önceden dolu - elle de
   // değiştirilebilir (kullanıcı kodu başka bir yerden kopyalayıp gelmiş olabilir).
   initialToken: string;
@@ -23,7 +27,7 @@ type FieldErrors = {
  * (+ tekrar) girilir. Kod geçersiz/süresi dolmuşsa backend 400 döner, mesaj burada
  * gösterilir.
  */
-export function ResetPasswordForm({ initialToken, onSuccess }: ResetPasswordFormProps) {
+export function ResetPasswordForm({ username, initialToken, onSuccess }: ResetPasswordFormProps) {
   const [token, setToken] = useState(initialToken);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -61,7 +65,7 @@ export function ResetPasswordForm({ initialToken, onSuccess }: ResetPasswordForm
 
     setLoading(true);
     try {
-      await resetPassword(token.trim(), newPassword);
+      await resetPassword(username, token.trim(), newPassword);
       onSuccess();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Bir hata oluştu");
