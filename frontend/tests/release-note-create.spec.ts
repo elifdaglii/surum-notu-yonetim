@@ -19,13 +19,7 @@ test.describe("Sürüm Notu Oluşturma", () => {
       "## deneme yapıyorum",
     );
 
-    // Kaydetme sonrası kısa süreli bir "başarı" toast'ı da aynı versiyon metnini
-    // içeriyor (bkz. add-release-note-dialog.tsx SUCCESS_MESSAGE_DURATION_MS),
-    // bu yüzden arşiv kartındaki metni doğrulamadan önce toast'ın kaybolmasını
-    // bekliyoruz - yoksa getByText(version) iki eşleşme bulup strict-mode
-    // ihlaline yol açıyor.
-    await expect(page.getByRole("status")).toBeHidden({ timeout: 6000 });
-    await expect(page.getByText(version)).toBeVisible();
+    await expect(formPage.noteCard(version)).toBeVisible();
   });
 
   test('geçersiz SemVer formatı reddedilmeli', async ({ page }) => {
@@ -37,5 +31,14 @@ test.describe("Sürüm Notu Oluşturma", () => {
     );
 
     await expect(formPage.versionErrorMessage).toBeVisible();
+  });
+
+  test('kategori seçilmeden kaydetme engellenmeli', async ({ page }) => {
+    const formPage = new ReleaseNoteFormPage(page);
+    const version = uniqueVersion();
+    await formPage.submitWithoutCategory(version, "## deneme yapıyorum");
+
+    await expect(formPage.saveButton).toBeVisible();
+    await expect(formPage.noteCard(version)).not.toBeVisible();
   });
 });

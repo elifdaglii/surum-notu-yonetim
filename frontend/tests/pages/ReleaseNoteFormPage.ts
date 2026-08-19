@@ -46,4 +46,23 @@ export class ReleaseNoteFormPage {
     await this.contentInput.fill(content);
     await this.saveButton.click();
   }
+
+  // Kategori bilerek seçilmiyor - KATEGORİ select'i native "required" attribute'una
+  // sahip (bkz. add-release-note-dialog.tsx), bu yüzden tarayıcı formu hiç submit
+  // etmiyor: handleSubmit hiç çalışmıyor, dialog açık kalıyor, kayıt oluşmuyor.
+  async submitWithoutCategory(version: string, content: string) {
+    await this.openForm();
+    await this.versionInput.fill(version);
+    await this.contentInput.fill(content);
+    await this.saveButton.click();
+  }
+
+  // Arşivdeki kart: release-notes-archive.tsx'te <Card role="button"> olarak render
+  // ediliyor, versiyon metnini içeriyor. Kaydetme sonrası ekrandaki geçici "başarı"
+  // toast'ı (role="status") da aynı metni içerdiği için (ve toast'ın DOM'a ne zaman
+  // girip çıktığı zamanlamaya bağlı olduğu için) role="button" ile daraltmak, toast'la
+  // karışmayı zamanlama gerektirmeden kalıcı olarak önlüyor.
+  noteCard(version: string): Locator {
+    return this.page.getByRole("button").filter({ hasText: version });
+  }
 }
