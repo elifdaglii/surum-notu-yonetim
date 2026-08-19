@@ -8,6 +8,7 @@ export class ReleaseNoteFormPage {
   readonly contentInput: Locator;
   readonly saveButton: Locator;
   readonly versionErrorMessage: Locator;
+  readonly previewPanel: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -20,6 +21,10 @@ export class ReleaseNoteFormPage {
     this.saveButton = page.getByRole("button", { name: "Kaydet" });
     // add-release-note-dialog.tsx: validateVersion() -> setVersionError(...) mesajı
     this.versionErrorMessage = page.getByText("Lütfen vX.X.X formatında yazın");
+    // "Önizleme" etiketinin hemen altındaki div - marked.parse() + DOMPurify.sanitize()
+    // çıktısının dangerouslySetInnerHTML ile basıldığı canlı önizleme paneli
+    // (bkz. add-release-note-dialog.tsx previewHtml).
+    this.previewPanel = page.locator('span:text-is("Önizleme") + div');
   }
 
   async goto() {

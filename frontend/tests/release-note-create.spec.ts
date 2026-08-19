@@ -41,4 +41,14 @@ test.describe("Sürüm Notu Oluşturma", () => {
     await expect(formPage.saveButton).toBeVisible();
     await expect(formPage.noteCard(version)).not.toBeVisible();
   });
+
+  test('markdown içeriği canlı önizlemede gösterilmeli', async ({ page }) => {
+    const formPage = new ReleaseNoteFormPage(page);
+    await formPage.openForm();
+    await formPage.contentInput.fill('## Test Başlığı');
+
+    await expect(
+      formPage.previewPanel.getByRole('heading', { name: 'Test Başlığı', level: 2 }),
+    ).toBeVisible();
+  });
 });
