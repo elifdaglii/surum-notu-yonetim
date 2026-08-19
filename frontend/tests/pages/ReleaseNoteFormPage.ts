@@ -7,6 +7,7 @@ export class ReleaseNoteFormPage {
   readonly categoryDropdown: Locator;
   readonly contentInput: Locator;
   readonly saveButton: Locator;
+  readonly versionErrorMessage: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -17,6 +18,8 @@ export class ReleaseNoteFormPage {
     this.categoryDropdown = page.getByRole("combobox", { name: "KATEGORİ" });
     this.contentInput = page.getByRole("textbox", { name: "İÇERİK" });
     this.saveButton = page.getByRole("button", { name: "Kaydet" });
+    // add-release-note-dialog.tsx: validateVersion() -> setVersionError(...) mesajı
+    this.versionErrorMessage = page.getByText("Lütfen vX.X.X formatında yazın");
   }
 
   async goto() {

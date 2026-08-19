@@ -44,3 +44,8 @@ logs/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---- Playwright (yanlislikla repo kokunden calistirilirsa) ----
+/test-results/
+/playwright-report/
+/blob-report/
