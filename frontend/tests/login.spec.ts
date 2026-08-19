@@ -5,7 +5,7 @@ test.describe("Login", () => {
   test("doğru bilgilerle giriş başarılı olmalı", async ({ page }) => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
-    await loginPage.login("Elif", "Elifsifre123");
+    await loginPage.login("Elif", "TestSifre123");
 
     await expect(
       page.getByText("Sürüm Notları", { exact: true }),
