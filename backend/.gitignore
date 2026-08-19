@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ---- Playwright (yanlislikla backend'den calistirilirsa) ----
+/test-results/
+/playwright-report/
