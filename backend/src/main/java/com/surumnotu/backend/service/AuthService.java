@@ -112,10 +112,10 @@ public class AuthService {
     // sayaci hesap bazinda tutuldugu icin username sart oldu).
     public void resetPassword(String username, String token, String newPassword) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new InvalidResetTokenException("Gecersiz kod"));
+                .orElseThrow(() -> new InvalidResetTokenException("Geçersiz kod"));
 
         if (user.getResetToken() == null) {
-            throw new InvalidResetTokenException("Gecersiz kod");
+            throw new InvalidResetTokenException("Geçersiz kod");
         }
 
         if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(Instant.now())) {
@@ -134,7 +134,7 @@ public class AuthService {
             }
             user.setResetCodeAttempts(attempts);
             userRepository.save(user);
-            throw new InvalidResetTokenException("Gecersiz kod");
+            throw new InvalidResetTokenException("Geçersiz kod");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));

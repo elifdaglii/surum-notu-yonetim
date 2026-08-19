@@ -91,7 +91,7 @@ class AuthServiceResetFlowIntegrationTest {
         for (int i = 0; i < 4; i++) {
             assertThatThrownBy(() -> authService.resetPassword("test-attempts", "000000", "irrelevantPass1"))
                     .isInstanceOf(InvalidResetTokenException.class)
-                    .hasMessage("Gecersiz kod");
+                    .hasMessage("Geçersiz kod");
         }
 
         // 5. yanlis deneme: kod artik gecersiz kilinmali, farkli bir mesajla.
@@ -102,7 +102,7 @@ class AuthServiceResetFlowIntegrationTest {
         // Dogru kod bile artik kabul edilmemeli - kod tamamen gecersiz kilindi.
         assertThatThrownBy(() -> authService.resetPassword("test-attempts", response.token(), "irrelevantPass1"))
                 .isInstanceOf(InvalidResetTokenException.class)
-                .hasMessage("Gecersiz kod");
+                .hasMessage("Geçersiz kod");
     }
 
     @Test
@@ -120,6 +120,6 @@ class AuthServiceResetFlowIntegrationTest {
         // Ayni kod ikinci kez kullanilmaya calisilirsa artik gecersiz olmali.
         assertThatThrownBy(() -> authService.resetPassword("test-single-use", response.token(), "anotherPass1"))
                 .isInstanceOf(InvalidResetTokenException.class)
-                .hasMessage("Gecersiz kod");
+                .hasMessage("Geçersiz kod");
     }
 }

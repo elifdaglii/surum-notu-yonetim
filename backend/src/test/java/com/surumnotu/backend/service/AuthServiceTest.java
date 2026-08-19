@@ -88,7 +88,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.resetPassword(USERNAME, "000000", "irrelevantPass1"))
                 .isInstanceOf(InvalidResetTokenException.class)
-                .hasMessage("Gecersiz kod");
+                .hasMessage("Geçersiz kod");
 
         ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
         verify(userRepository, times(1)).save(savedUser.capture());
@@ -140,7 +140,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.resetPassword(USERNAME, CORRECT_CODE, "irrelevantPass1"))
                 .isInstanceOf(InvalidResetTokenException.class)
-                .hasMessage("Gecersiz kod");
+                .hasMessage("Geçersiz kod");
 
         verify(userRepository, never()).save(any());
     }
