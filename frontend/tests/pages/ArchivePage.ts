@@ -101,4 +101,26 @@ export class ArchivePage {
   htmlDownloadButton(version: string): Locator {
     return this.cards.filter({ hasText: version }).getByRole('button', { name: 'HTML indir' });
   }
+
+  // Karta tıklamak ReleaseNoteDetailDialog'u açıyor - DialogTitle tam olarak note.version
+  // (bkz. release-note-detail-dialog.tsx), bu yüzden modalı doğrudan versiyonla scoplayabiliyoruz.
+  // "Düzenle"/"Sil" butonları sadece canManage=true iken render ediliyor (ADMIN her zaman,
+  // USER sadece kendi notunda) - bkz. release-notes-archive.tsx canManage hesaplaması.
+  noteDetailDialog(version: string): Locator {
+    return this.page.getByRole('dialog', { name: version });
+  }
+
+  editNoteButton(version: string): Locator {
+    return this.noteDetailDialog(version).getByRole('button', { name: 'Düzenle' });
+  }
+
+  deleteNoteButton(version: string): Locator {
+    return this.noteDetailDialog(version).getByRole('button', { name: 'Sil' });
+  }
+
+  // "Sil"e basınca native window.confirm DEĞİL, Radix'in kendi (nested) onay dialog'u
+  // açılıyor - kırmızı "Evet, Sil" butonu (bkz. release-note-detail-dialog.tsx).
+  async confirmDeleteNote() {
+    await this.page.getByRole('button', { name: 'Evet, Sil' }).click();
+  }
 }

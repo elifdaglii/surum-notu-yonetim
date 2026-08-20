@@ -196,7 +196,16 @@ test.describe('Arşiv Arama ve Sıralama', () => {
     const versionB = nonOverlappingVersion([versionA]);
 
     await formPage.createReleaseNote(versionA, 'Özellik', '## deneme yapıyorum');
+    await expect(formPage.noteCard(versionA)).toBeVisible();
+    // createReleaseNote() kaydetme isteğinin bitmesini BEKLEMEDEN döner (bkz.
+    // ReleaseNoteFormPage) - versionB'nin kartının gerçekten yansıdığını burada
+    // doğrulamadan hemen aramaya geçmek, yoğun paralel yük altında (ör. tüm suite aynı
+    // anda çalışırken) formun/modalın henüz kapanmamış olabileceği bir an yakalayıp
+    // search() input'unu etkileşimsiz bırakabiliyordu (bkz. archive-search.spec.ts'teki
+    // sıralama testlerinde daha önce bulunan aynı sınıf race - orada da bu şekilde
+    // çözüldü).
     await formPage.createReleaseNote(versionB, 'Hata Çözümü', '## deneme yapıyorum');
+    await expect(formPage.noteCard(versionB)).toBeVisible();
 
     await archivePage.search(versionA);
     await expect(formPage.noteCard(versionA)).toBeVisible();

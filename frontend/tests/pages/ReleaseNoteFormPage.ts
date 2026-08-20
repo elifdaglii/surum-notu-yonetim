@@ -8,6 +8,7 @@ export class ReleaseNoteFormPage {
   readonly categoryDropdown: Locator;
   readonly contentInput: Locator;
   readonly saveButton: Locator;
+  readonly updateButton: Locator;
   readonly versionErrorMessage: Locator;
   readonly previewPanel: Locator;
 
@@ -23,6 +24,10 @@ export class ReleaseNoteFormPage {
     this.categoryDropdown = page.getByRole("combobox", { name: "KATEGORİ" });
     this.contentInput = page.getByRole("textbox", { name: "İÇERİK" });
     this.saveButton = page.getByRole("button", { name: "Kaydet" });
+    // add-release-note-dialog.tsx: mode="edit" iken submit butonunun metni "Kaydet" değil
+    // "Güncelle" - aynı form/aynı alanlar (versionInput/contentInput/vs.) edit modunda da
+    // kullanılabiliyor, sadece kaydetme butonu farklı bir locator istiyor.
+    this.updateButton = page.getByRole("button", { name: "Güncelle" });
     // add-release-note-dialog.tsx: validateVersion() -> setVersionError(...) mesajı
     this.versionErrorMessage = page.getByText("Lütfen vX.X.X formatında yazın");
     // "Önizleme" etiketinin hemen altındaki div - marked.parse() + DOMPurify.sanitize()
