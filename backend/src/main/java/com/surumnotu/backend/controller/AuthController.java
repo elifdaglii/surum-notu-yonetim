@@ -2,6 +2,7 @@ package com.surumnotu.backend.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +35,13 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request.username(), request.password()));
     }
 
+    // Self-servis kayıt kapatıldı (önceki karar) - kullanıcı oluşturmanın tek yolu artık
+    // /api/admin/users (bkz. AdminController). SecurityConfig'de bu path artık permitAll
+    // DEĞİL (.anyRequest().authenticated() kuralına düşüyor), buradaki @PreAuthorize ek bir
+    // savunma katmanı: sadece "giriş yapmış olmak" yetmiyor, ADMIN olmak gerekiyor - yoksa
+    // herhangi bir sıradan USER da keyfi yeni hesap açabilirdi.
     @PostMapping("/register")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request.username(), request.password());
         return ResponseEntity.status(HttpStatus.CREATED).build();

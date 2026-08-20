@@ -10,9 +10,22 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 const BACKEND_URL = 'http://localhost:8080';
 const REGISTER_PASSWORD = 'GecmisSifre123';
 
+// /api/auth/register artık ADMIN kimlik doğrulaması gerektiriyor (self-servis kayıt
+// kapatıldı - bkz. backend SecurityConfig/AuthController) - test kullanıcıları artık
+// önce Elif olarak login olup alınan admin token'ıyla oluşturuluyor.
+async function loginAsAdmin(request: APIRequestContext): Promise<string> {
+  const response = await request.post(`${BACKEND_URL}/api/auth/login`, {
+    data: { username: 'Elif', password: 'TestSifre123' },
+  });
+  const { token } = (await response.json()) as { token: string };
+  return token;
+}
+
 async function registerUniqueUser(request: APIRequestContext): Promise<string> {
   const username = `pwreset_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+  const adminToken = await loginAsAdmin(request);
   const response = await request.post(`${BACKEND_URL}/api/auth/register`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
     data: { username, password: REGISTER_PASSWORD },
   });
   if (!response.ok()) {

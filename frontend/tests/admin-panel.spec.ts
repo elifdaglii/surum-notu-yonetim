@@ -10,10 +10,16 @@ const BACKEND_URL = 'http://localhost:8080';
 // Senaryo 4/5 için testin kendi oluşturduğu, garantili benzersiz bir USER hesabı -
 // forgot-password.spec.ts / archive-search.spec.ts'teki aynı desen: backend'e doğrudan
 // register isteği atmak, UI'da ikinci bir oturum kurmadan izole bir hesap veriyor.
+//
+// /api/auth/register artık ADMIN kimlik doğrulaması gerektiriyor (self-servis kayıt kapatıldı -
+// bkz. backend SecurityConfig/AuthController) - önce Elif olarak login olup alınan admin
+// token'ı bu isteğe ekleniyor.
 async function registerUser(request: APIRequestContext): Promise<{ username: string; password: string }> {
   const username = `adminpanel_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
   const password = 'TestSifre123';
+  const adminToken = await loginViaApi(request, 'Elif', 'TestSifre123');
   const response = await request.post(`${BACKEND_URL}/api/auth/register`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
     data: { username, password },
   });
   if (!response.ok()) {

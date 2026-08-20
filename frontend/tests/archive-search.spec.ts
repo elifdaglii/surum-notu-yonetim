@@ -25,11 +25,21 @@ function nonOverlappingVersion(existing: string[]): string {
 // UI'da ikinci bir oturum açmak yerine forgot-password.spec.ts'teki gibi backend'e doğrudan
 // register+login+create isteği atıp yeni, garantili benzersiz bir kullanıcı adına ait tek bir
 // not oluşturuyoruz - bu sayede DB'de önceden ne olursa olsun test izole ve deterministik kalıyor.
+//
+// /api/auth/register artık ADMIN kimlik doğrulaması gerektiriyor (self-servis kayıt kapatıldı -
+// bkz. backend SecurityConfig/AuthController) - önce Elif olarak login olup alınan admin
+// token'ı bu isteğe ekleniyor.
 async function createNoteAsNewAuthor(request: APIRequestContext, version: string): Promise<string> {
   const username = `archauth_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
   const password = 'TestSifre123';
 
+  const adminLoginResponse = await request.post(`${BACKEND_URL}/api/auth/login`, {
+    data: { username: 'Elif', password: 'TestSifre123' },
+  });
+  const { token: adminToken } = (await adminLoginResponse.json()) as { token: string };
+
   const registerResponse = await request.post(`${BACKEND_URL}/api/auth/register`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
     data: { username, password },
   });
   if (!registerResponse.ok()) {

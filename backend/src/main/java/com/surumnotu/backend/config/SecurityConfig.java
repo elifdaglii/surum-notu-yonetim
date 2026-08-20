@@ -31,7 +31,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/error").permitAll()
+                        // /api/auth/register BİLEREK burada değil - kimlik doğrulaması gerektiren
+                        // .anyRequest().authenticated() kuralına düşüyor + AuthController'da
+                        // @PreAuthorize("hasRole('ADMIN')") ile ek olarak ADMIN'e kısıtlanıyor.
+                        // Self-servis kayıt kapatıldı (önceki karar); kullanıcı oluşturmanın tek
+                        // yolu artık /api/admin/users (bkz. AdminController).
+                        .requestMatchers("/api/auth/login", "/api/auth/forgot-password",
+                                "/api/auth/reset-password", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
