@@ -89,4 +89,16 @@ export class ArchivePage {
     await this.page.getByRole('option', { name: username, exact: true }).click();
     await this.page.keyboard.press('Escape');
   }
+
+  // Kartın sağ üst köşesindeki PDF/HTML indirme ikonları (aria-label'lı) - kartın kendisi
+  // de role="button" olduğu için (detay modalını açan tıklama alanı), doğru butonu bulmak
+  // adına önce version metnini içeren KARTA daralıyoruz, sonra içindeki aria-label'a göre
+  // arıyoruz. release-notes-archive.tsx: handleDownloadPdf/handleDownloadHtml.
+  pdfDownloadButton(version: string): Locator {
+    return this.cards.filter({ hasText: version }).getByRole('button', { name: 'PDF indir' });
+  }
+
+  htmlDownloadButton(version: string): Locator {
+    return this.cards.filter({ hasText: version }).getByRole('button', { name: 'HTML indir' });
+  }
 }
