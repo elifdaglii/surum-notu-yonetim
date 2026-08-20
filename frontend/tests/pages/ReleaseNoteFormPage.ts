@@ -4,6 +4,7 @@ export class ReleaseNoteFormPage {
   readonly page: Page;
   readonly addButton: Locator;
   readonly versionInput: Locator;
+  readonly dateInput: Locator;
   readonly categoryDropdown: Locator;
   readonly contentInput: Locator;
   readonly saveButton: Locator;
@@ -16,6 +17,9 @@ export class ReleaseNoteFormPage {
       name: "+ Yeni Sürüm Notu Ekle",
     });
     this.versionInput = page.getByRole("textbox", { name: "SÜRÜM NUMARASI" });
+    // <input type="date">, label'a htmlFor="release-date" ile bağlı - varsayılanı bugünün
+    // tarihi (bkz. add-release-note-dialog.tsx getTodayDateInputValue).
+    this.dateInput = page.getByLabel("YAYINLANMA TARİHİ");
     this.categoryDropdown = page.getByRole("combobox", { name: "KATEGORİ" });
     this.contentInput = page.getByRole("textbox", { name: "İÇERİK" });
     this.saveButton = page.getByRole("button", { name: "Kaydet" });
@@ -40,13 +44,20 @@ export class ReleaseNoteFormPage {
     await this.page.getByRole("option", { name: categoryName }).click();
   }
 
+  // releaseDate verilmezse form varsayılanı olan "bugün" kullanılır. "yyyy-MM-dd" formatında
+  // beklenir (input type="date" ile uyumlu) - arşivdeki sıralama testlerinde birbirinden
+  // farklı, kontrollü tarihli notlar oluşturmak için kullanılıyor.
   async createReleaseNote(
     version: string,
     categoryName: string,
     content: string,
+    releaseDate?: string,
   ) {
     await this.openForm();
     await this.versionInput.fill(version);
+    if (releaseDate) {
+      await this.dateInput.fill(releaseDate);
+    }
     await this.selectCategory(categoryName);
     await this.contentInput.fill(content);
     await this.saveButton.click();
