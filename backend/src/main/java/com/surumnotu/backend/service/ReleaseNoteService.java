@@ -51,7 +51,7 @@ public class ReleaseNoteService {
 
     public ReleaseNoteResponse getById(Long id) {
         ReleaseNote note = releaseNoteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Surum notu bulunamadi: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Sürüm notu bulunamadı: " + id));
 
         return toResponse(note);
     }
@@ -64,7 +64,7 @@ public class ReleaseNoteService {
 
     public ReleaseNoteResponse create(ReleaseNoteRequest request, String currentUsername) {
         User creator = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("Giris yapan kullanici bulunamadi: " + currentUsername));
+                .orElseThrow(() -> new ResourceNotFoundException("Giriş yapan kullanıcı bulunamadı: " + currentUsername));
 
         ReleaseNote note = ReleaseNote.builder()
                 .version(request.version())
@@ -79,7 +79,7 @@ public class ReleaseNoteService {
 
     public ReleaseNoteResponse update(Long id, ReleaseNoteRequest request, String currentUsername) {
         ReleaseNote note = releaseNoteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Surum notu bulunamadi: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Sürüm notu bulunamadı: " + id));
 
         assertCanManage(note, currentUsername);
 
@@ -93,7 +93,7 @@ public class ReleaseNoteService {
 
     public void delete(Long id, String currentUsername) {
         ReleaseNote note = releaseNoteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Surum notu bulunamadi: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Sürüm notu bulunamadı: " + id));
 
         assertCanManage(note, currentUsername);
 
@@ -105,7 +105,7 @@ public class ReleaseNoteService {
     // belirsiz eski kayitlar) 403 donuyor.
     private void assertCanManage(ReleaseNote note, String currentUsername) {
         User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("Giris yapan kullanici bulunamadi: " + currentUsername));
+                .orElseThrow(() -> new ResourceNotFoundException("Giriş yapan kullanıcı bulunamadı: " + currentUsername));
 
         if (currentUser.getRole() == Role.ADMIN) {
             return;
@@ -115,7 +115,7 @@ public class ReleaseNoteService {
                 && note.getCreatedBy().getId().equals(currentUser.getId());
 
         if (!isOwner) {
-            throw new AccessDeniedException("Bu surum notunu duzenleme/silme yetkiniz yok");
+            throw new AccessDeniedException("Bu sürüm notunu düzenleme/silme yetkiniz yok");
         }
     }
 
@@ -124,7 +124,7 @@ public class ReleaseNoteService {
             return null;
         }
         return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadi: " + categoryId));
+                .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadı: " + categoryId));
     }
 
     // contentMarkdown markdown kaynagi, HTML degil - Jsoup.clean(rawContent, Safelist.none())

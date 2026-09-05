@@ -84,7 +84,7 @@ public class ReleaseNoteDocumentRenderer {
     private static String readResourceAsBase64(String resourcePath) {
         try (InputStream stream = ReleaseNoteDocumentRenderer.class.getResourceAsStream(resourcePath)) {
             if (stream == null) {
-                throw new IllegalStateException("Kaynak bulunamadi: " + resourcePath);
+                throw new IllegalStateException("Kaynak bulunamadı: " + resourcePath);
             }
             return Base64.getEncoder().encodeToString(stream.readAllBytes());
         } catch (IOException e) {

@@ -5,10 +5,10 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record ResetPasswordRequest(
-        @NotBlank(message = "Kullanici adi bos olamaz") String username,
-        @NotBlank(message = "Kod bos olamaz")
-        @Pattern(regexp = "\\d{6}", message = "Kod 6 haneli sayisal bir deger olmali") String token,
-        @NotBlank(message = "Sifre bos olamaz")
-        @Size(min = 8, message = "Sifre en az 8 karakter olmali") String newPassword
+        @NotBlank(message = "Kullanıcı adı boş olamaz") String username,
+        @NotBlank(message = "Kod boş olamaz")
+        @Pattern(regexp = "\\d{6}", message = "Kod 6 haneli sayısal bir değer olmalı") String token,
+        @NotBlank(message = "Şifre boş olamaz")
+        @Size(min = 8, message = "Şifre en az 8 karakter olmalı") String newPassword
 ) {
 }

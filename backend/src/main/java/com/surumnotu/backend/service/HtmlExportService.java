@@ -64,7 +64,7 @@ public class HtmlExportService {
     private String readFontAsBase64(String fileName) {
         try (InputStream stream = getClass().getResourceAsStream("/fonts/" + fileName)) {
             if (stream == null) {
-                throw new IllegalStateException("Font kaynagi bulunamadi: " + fileName);
+                throw new IllegalStateException("Font kaynağı bulunamadı: " + fileName);
             }
             return Base64.getEncoder().encodeToString(stream.readAllBytes());
         } catch (IOException e) {

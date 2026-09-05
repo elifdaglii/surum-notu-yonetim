@@ -57,7 +57,7 @@ class CategoryServiceTest {
 
         assertThatThrownBy(() -> categoryService.delete(categoryId))
                 .isInstanceOf(CategoryInUseException.class)
-                .hasMessageContaining("3 surum notu");
+                .hasMessageContaining("3 sürüm notu");
 
         verify(categoryRepository, never()).delete(any());
     }

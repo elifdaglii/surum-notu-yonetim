@@ -47,7 +47,7 @@ public class UserManagementService {
     public UserResponse updateUser(Long id, String username, String rawPassword, Role role, String email,
             String currentUsername) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanici bulunamadi: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı: " + id));
 
         if (userRepository.existsByUsernameAndIdNot(username, id)) {
             throw new UsernameAlreadyExistsException(username);
@@ -59,11 +59,11 @@ public class UserManagementService {
         // Admin kendi rolunu USER'a dusuremez - digger admin sayisindan bagimsiz,
         // oturum ortasinda kendi kendini yetkisiz birakmasin diye kosulsuz engelleniyor.
         if (isSelf && isDemotingFromAdmin) {
-            throw new LastAdminException("Kendi admin rolunuzu kaldiramazsiniz");
+            throw new LastAdminException("Kendi admin rolünüzü kaldıramazsınız");
         }
 
         if (isDemotingFromAdmin && userRepository.countByRole(Role.ADMIN) <= 1) {
-            throw new LastAdminException("Sistemde en az bir ADMIN kalmali, bu kullanicinin rolu degistirilemez");
+            throw new LastAdminException("Sistemde en az bir ADMIN kalmalı, bu kullanıcının rolü değiştirilemez");
         }
 
         user.setUsername(username);
@@ -78,10 +78,10 @@ public class UserManagementService {
 
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanici bulunamadi: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı: " + id));
 
         if (user.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
-            throw new LastAdminException("Sistemde en az bir ADMIN kalmali, bu kullanici silinemez");
+            throw new LastAdminException("Sistemde en az bir ADMIN kalmalı, bu kullanıcı silinemez");
         }
 
         userRepository.delete(user);

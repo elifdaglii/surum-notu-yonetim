@@ -5,10 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
-        @NotBlank(message = "Kullanici adi bos olamaz") String username,
-        @NotBlank(message = "Sifre bos olamaz")
-        @Size(min = 8, message = "Sifre en az 8 karakter olmali") String password,
+        @NotBlank(message = "Kullanıcı adı boş olamaz") String username,
+        @NotBlank(message = "Şifre boş olamaz")
+        @Size(min = 8, message = "Şifre en az 8 karakter olmalı") String password,
         // Opsiyonel: doluysa sifremi unuttum akisinda kod bu adrese gonderilir.
-        @Email(message = "Gecerli bir email adresi girin") String email
+        @Email(message = "Geçerli bir email adresi girin") String email
 ) {
 }

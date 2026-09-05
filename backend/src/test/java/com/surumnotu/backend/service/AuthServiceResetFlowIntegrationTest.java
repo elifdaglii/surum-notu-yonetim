@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -75,7 +75,7 @@ class AuthServiceResetFlowIntegrationTest {
         String token = readResetToken("test-code-format");
         assertThat(token).isNotNull();
         assertThat(SIX_DIGIT.matcher(token).matches()).isTrue();
-        verify(javaMailSender, times(1)).send(any(SimpleMailMessage.class));
+        verify(javaMailSender, times(1)).send(any(MimeMessagePreparator.class));
     }
 
     @Test
@@ -92,7 +92,7 @@ class AuthServiceResetFlowIntegrationTest {
         // sekli (mesaj) "kullanici yok" durumuyla ayni kalmali (enumeration'a karsi).
         assertThat(secondToken).isEqualTo(firstToken);
         assertThat(second.message()).isEqualTo(first.message());
-        verify(javaMailSender, times(1)).send(any(SimpleMailMessage.class));
+        verify(javaMailSender, times(1)).send(any(MimeMessagePreparator.class));
     }
 
     @Test
@@ -107,14 +107,14 @@ class AuthServiceResetFlowIntegrationTest {
         authService.forgotPassword("test-no-email");
 
         assertThat(readResetToken("test-no-email")).isNotNull();
-        verify(javaMailSender, times(0)).send(any(SimpleMailMessage.class));
+        verify(javaMailSender, times(0)).send(any(MimeMessagePreparator.class));
     }
 
     @Test
     void forgotPassword_mailGonderimiPatlarsa_kodYineDeDbdeKaliyor() {
         createUser("test-mail-failure");
         doThrow(new MailSendException("SMTP kimlik dogrulama hatasi (test)"))
-                .when(javaMailSender).send(any(SimpleMailMessage.class));
+                .when(javaMailSender).send(any(MimeMessagePreparator.class));
 
         assertThatThrownBy(() -> authService.forgotPassword("test-mail-failure"))
                 .isInstanceOf(MailSendException.class);
@@ -137,7 +137,7 @@ class AuthServiceResetFlowIntegrationTest {
 
         assertThatThrownBy(() -> authService.resetPassword("test-expiry", token, "newValidPass1"))
                 .isInstanceOf(InvalidResetTokenException.class)
-                .hasMessage("Kodun suresi doldu, yeni kod isteyin");
+                .hasMessage("Kodun süresi doldu, yeni kod isteyin");
     }
 
     @Test
@@ -155,7 +155,7 @@ class AuthServiceResetFlowIntegrationTest {
         // 5. yanlis deneme: kod artik gecersiz kilinmali, farkli bir mesajla.
         assertThatThrownBy(() -> authService.resetPassword("test-attempts", "000000", "irrelevantPass1"))
                 .isInstanceOf(InvalidResetTokenException.class)
-                .hasMessage("Cok fazla yanlis deneme yapildi, kod gecersiz kilindi. Yeni kod isteyin");
+                .hasMessage("Çok fazla yanlış deneme yapıldı, kod geçersiz kılındı. Yeni kod isteyin");
 
         // Dogru kod bile artik kabul edilmemeli - kod tamamen gecersiz kilindi.
         assertThatThrownBy(() -> authService.resetPassword("test-attempts", token, "irrelevantPass1"))

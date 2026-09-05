@@ -28,6 +28,12 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<!-- Bu olmadan javac, .java dosyalarini isletim sisteminin varsayilan (platforma
+		     bagli) karakter kodlamasiyla okur - Windows'ta bu genelde UTF-8 degildir ve
+		     kaynak dosyalardaki Turkce karakterlerin (ç, ş, ğ, ı, ö, ü) derleme sirasinda
+		     yanlis yorumlanmasina (bytecode icine gomulu string sabitlerinin bozulmasina)
+		     yol acabilir. -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
 		<dependency>

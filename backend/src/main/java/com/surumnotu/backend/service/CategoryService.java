@@ -40,12 +40,12 @@ public class CategoryService {
     // notları başka bir kategoriye taşımalı ya da silmeli.
     public void delete(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadi: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadı: " + id));
 
         long linkedNoteCount = releaseNoteRepository.countByCategory_Id(id);
         if (linkedNoteCount > 0) {
             throw new CategoryInUseException(
-                    "Bu kategoriye bagli " + linkedNoteCount + " surum notu var, once onlari baska bir kategoriye tasiyin veya silin");
+                    "Bu kategoriye bağlı " + linkedNoteCount + " sürüm notu var, önce onları başka bir kategoriye taşıyın veya silin");
         }
 
         categoryRepository.delete(category);

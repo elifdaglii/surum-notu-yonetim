@@ -50,10 +50,10 @@ public class AuthService {
 
     public LoginResponse login(String username, String rawPassword) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BadCredentialsException("Kullanici adi veya sifre hatali"));
+                .orElseThrow(() -> new BadCredentialsException("Kullanıcı adı veya şifre hatalı"));
 
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new BadCredentialsException("Kullanici adi veya sifre hatali");
+            throw new BadCredentialsException("Kullanıcı adı veya şifre hatalı");
         }
 
         String token = jwtService.generateToken(user.getUsername());
@@ -103,7 +103,7 @@ public class AuthService {
             }
         }
 
-        return new ForgotPasswordResponse("Kullanici sistemde mevcutsa bir sifirlama kodu olusturuldu");
+        return new ForgotPasswordResponse("Kullanıcı sistemde mevcutsa bir sıfırlama kodu oluşturuldu");
     }
 
     // SADECE test/gelistirme debug endpoint'i icin (bkz. AuthController.debugResetCode) -
@@ -139,7 +139,7 @@ public class AuthService {
         if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(Instant.now())) {
             clearResetState(user);
             userRepository.save(user);
-            throw new InvalidResetTokenException("Kodun suresi doldu, yeni kod isteyin");
+            throw new InvalidResetTokenException("Kodun süresi doldu, yeni kod isteyin");
         }
 
         if (!user.getResetToken().equals(token)) {
@@ -148,7 +148,7 @@ public class AuthService {
                 clearResetState(user);
                 userRepository.save(user);
                 throw new InvalidResetTokenException(
-                        "Cok fazla yanlis deneme yapildi, kod gecersiz kilindi. Yeni kod isteyin");
+                        "Çok fazla yanlış deneme yapıldı, kod geçersiz kılındı. Yeni kod isteyin");
             }
             user.setResetCodeAttempts(attempts);
             userRepository.save(user);

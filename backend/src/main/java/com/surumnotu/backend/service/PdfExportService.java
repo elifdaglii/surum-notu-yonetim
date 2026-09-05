@@ -46,7 +46,7 @@ public class PdfExportService {
             builder.run();
             return out.toByteArray();
         } catch (IOException e) {
-            throw new IllegalStateException("PDF olusturulamadi", e);
+            throw new IllegalStateException("PDF oluşturulamadı", e);
         }
     }
 
@@ -57,7 +57,7 @@ public class PdfExportService {
     private InputStream fontStream(String fileName) {
         InputStream stream = getClass().getResourceAsStream("/fonts/" + fileName);
         if (stream == null) {
-            throw new IllegalStateException("Font kaynagi bulunamadi: " + fileName);
+            throw new IllegalStateException("Font kaynağı bulunamadı: " + fileName);
         }
         return stream;
     }
