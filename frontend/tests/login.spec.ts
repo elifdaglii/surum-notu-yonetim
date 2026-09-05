@@ -1,11 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { LoginPage } from "./pages/LoginPage";
+import { getAdminCredentials } from "./utils/adminAuth";
 
 test.describe("Login", () => {
   test("doğru bilgilerle giriş başarılı olmalı", async ({ page }) => {
     const loginPage = new LoginPage(page);
+    const { username, password } = getAdminCredentials();
     await loginPage.goto();
-    await loginPage.login("Elif", "TestSifre123");
+    await loginPage.login(username, password);
 
     await expect(
       page.getByText("Sürüm Notları", { exact: true }),
@@ -13,8 +15,11 @@ test.describe("Login", () => {
   });
   test("yanlış şifre ile giriş başarısız olmalı", async ({ page }) => {
     const loginPage = new LoginPage(page);
+    const { username } = getAdminCredentials();
     await loginPage.goto();
-    await loginPage.login("Elif", "yanlisSifre123");
+    // Şifre kasıtlı olarak yanlış - buradaki amaç gerçek admin şifresini DEĞİL, hatalı
+    // giriş davranışını test etmek.
+    await loginPage.login(username, "kesinlikle-yanlis-bir-sifre-999");
 
     await expect(
       page.getByText("Kullanıcı adı veya şifre hatalı"),

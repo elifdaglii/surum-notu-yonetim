@@ -4,6 +4,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { ReleaseNoteFormPage } from './pages/ReleaseNoteFormPage';
 import { uniqueVersion } from './utils/testData';
+import { getAdminCredentials } from './utils/adminAuth';
 
 // download.path() Playwright'ın kendi yönettiği, testler arasında otomatik temizlenen
 // geçici dosya konumunu döner (Chromium/Firefox/WebKit'te, remote olmayan bağlamlarda
@@ -21,8 +22,9 @@ async function downloadedFilePath(download: Download): Promise<string> {
 test.describe('Sürüm Notu Dışa Aktarma (PDF/HTML)', () => {
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
+    const { username, password } = getAdminCredentials();
     await loginPage.goto();
-    await loginPage.login('Elif', 'TestSifre123');
+    await loginPage.login(username, password);
   });
 
   test('normal içerik PDF export', async ({ page }) => {

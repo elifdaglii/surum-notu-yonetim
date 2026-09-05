@@ -2,12 +2,14 @@ import { test, expect } from "@playwright/test";
 import { LoginPage } from "./pages/LoginPage";
 import { ReleaseNoteFormPage } from "./pages/ReleaseNoteFormPage";
 import { uniqueVersion } from "./utils/testData";
+import { getAdminCredentials } from "./utils/adminAuth";
 
 test.describe("Sürüm Notu Oluşturma", () => {
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
+    const { username, password } = getAdminCredentials();
     await loginPage.goto();
-    await loginPage.login("Elif", "TestSifre123");
+    await loginPage.login(username, password);
   });
 
   test("geçerli bilgilerle sürüm notu oluşturulabilmeli", async ({ page }) => {

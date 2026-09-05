@@ -3,8 +3,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { ReleaseNoteFormPage } from './pages/ReleaseNoteFormPage';
 import { uniqueVersion } from './utils/testData';
-
-const BACKEND_URL = 'http://localhost:8080';
+import { BACKEND_URL, getAdminCredentials, loginAsAdmin } from './utils/adminAuth';
 
 // uniqueVersion() global olarak benzersiz ama iki bağımsız çağrının sonucu şans eseri
 // birbirinin ALT DİZESİ olabilir (örn. "v9.897.6" ve "v9.897.625" - aynı "minor" +
@@ -21,22 +20,19 @@ function nonOverlappingVersion(existing: string[]): string {
 }
 
 // Yazara göre filtreleme testinde "sadece bu yazarın notu görünüyor mu" iddiasını kanıtlamak
-// için Elif'ten (testlerin login olduğu tek UI kullanıcısı) FARKLI bir yazara ihtiyaç var.
-// UI'da ikinci bir oturum açmak yerine forgot-password.spec.ts'teki gibi backend'e doğrudan
+// için beforeEach'te login olunan admin hesabından FARKLI bir yazara ihtiyaç var. UI'da
+// ikinci bir oturum açmak yerine forgot-password.spec.ts'teki gibi backend'e doğrudan
 // register+login+create isteği atıp yeni, garantili benzersiz bir kullanıcı adına ait tek bir
 // not oluşturuyoruz - bu sayede DB'de önceden ne olursa olsun test izole ve deterministik kalıyor.
 //
 // /api/auth/register artık ADMIN kimlik doğrulaması gerektiriyor (self-servis kayıt kapatıldı -
-// bkz. backend SecurityConfig/AuthController) - önce Elif olarak login olup alınan admin
-// token'ı bu isteğe ekleniyor.
+// bkz. backend SecurityConfig/AuthController) - backend'in seed ettiği admin hesabıyla
+// (bkz. utils/adminAuth.ts) login olup alınan token bu isteğe ekleniyor.
 async function createNoteAsNewAuthor(request: APIRequestContext, version: string): Promise<string> {
   const username = `archauth_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
   const password = 'TestSifre123';
 
-  const adminLoginResponse = await request.post(`${BACKEND_URL}/api/auth/login`, {
-    data: { username: 'Elif', password: 'TestSifre123' },
-  });
-  const { token: adminToken } = (await adminLoginResponse.json()) as { token: string };
+  const adminToken = await loginAsAdmin(request);
 
   const registerResponse = await request.post(`${BACKEND_URL}/api/auth/register`, {
     headers: { Authorization: `Bearer ${adminToken}` },
@@ -75,8 +71,9 @@ async function createNoteAsNewAuthor(request: APIRequestContext, version: string
 test.describe('Arşiv Arama ve Sıralama', () => {
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
+    const { username, password } = getAdminCredentials();
     await loginPage.goto();
-    await loginPage.login('Elif', 'TestSifre123');
+    await loginPage.login(username, password);
   });
 
   test('varsayılan ters kronolojik sıralama', async ({ page }) => {
@@ -141,7 +138,7 @@ test.describe('Arşiv Arama ve Sıralama', () => {
     const version = uniqueVersion();
     const author = await createNoteAsNewAuthor(request, version);
 
-    // Elif'in kendi notu - filtre uygulandığında bunun EKRANDAN KAYBOLMASI, filtrenin
+    // beforeEach'te giriş yapılan admin hesabının kendi notu - filtre uygulandığında bunun EKRANDAN KAYBOLMASI, filtrenin
     // gerçekten sadece seçilen yazarı bırakıp diğerlerini elediğini kanıtlıyor. Paralel
     // çalışan diğer suite'lerin DB'ye eş zamanlı yazdığı bir ortamda toplam kart SAYISINA
     // (toHaveCount) güvenmek kırılgan olurdu - bunun yerine bilinen, belirli iki kartın

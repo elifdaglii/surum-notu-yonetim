@@ -4,12 +4,14 @@ import { CategoryPage } from './pages/CategoryPage';
 import { ReleaseNoteFormPage } from './pages/ReleaseNoteFormPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { uniqueVersion } from './utils/testData';
+import { getAdminCredentials } from './utils/adminAuth';
 
 test.describe('Kategori Yönetimi', () => {
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
+    const { username, password } = getAdminCredentials();
     await loginPage.goto();
-    await loginPage.login('Elif', 'TestSifre123');
+    await loginPage.login(username, password);
   });
 
   test('kategori ekleme', async ({ page }) => {
