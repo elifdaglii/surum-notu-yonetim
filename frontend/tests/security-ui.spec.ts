@@ -2,8 +2,7 @@ import { test, expect } from '@playwright/test';
 import { LoginPage } from './pages/LoginPage';
 import { AdminPanelPage } from './pages/AdminPanelPage';
 import { GeneralUIPage } from './pages/GeneralUIPage';
-
-const BACKEND_URL = 'http://localhost:8080';
+import { BACKEND_URL, getAdminCredentials } from './utils/adminAuth';
 
 // Saf API testi - tarayıcı/login gerektirmiyor, bu yüzden ayrı, beforeEach'siz bir
 // describe bloğunda.
@@ -33,8 +32,9 @@ test.describe('Register Endpoint Güvenliği', () => {
 test.describe('Genel Arayüz (Tema, Oturum)', () => {
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
+    const { username, password } = getAdminCredentials();
     await loginPage.goto();
-    await loginPage.login('Elif', 'TestSifre123');
+    await loginPage.login(username, password);
   });
 
   test('dark/light mode toggle çalışmalı ve kalıcı olmalı', async ({ page }) => {

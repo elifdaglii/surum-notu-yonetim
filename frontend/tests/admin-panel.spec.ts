@@ -4,20 +4,19 @@ import { ArchivePage } from './pages/ArchivePage';
 import { ReleaseNoteFormPage } from './pages/ReleaseNoteFormPage';
 import { AdminPanelPage } from './pages/AdminPanelPage';
 import { uniqueVersion } from './utils/testData';
-
-const BACKEND_URL = 'http://localhost:8080';
+import { BACKEND_URL, getAdminCredentials, loginAsAdmin } from './utils/adminAuth';
 
 // Senaryo 4/5 için testin kendi oluşturduğu, garantili benzersiz bir USER hesabı -
 // forgot-password.spec.ts / archive-search.spec.ts'teki aynı desen: backend'e doğrudan
 // register isteği atmak, UI'da ikinci bir oturum kurmadan izole bir hesap veriyor.
 //
 // /api/auth/register artık ADMIN kimlik doğrulaması gerektiriyor (self-servis kayıt kapatıldı -
-// bkz. backend SecurityConfig/AuthController) - önce Elif olarak login olup alınan admin
-// token'ı bu isteğe ekleniyor.
+// bkz. backend SecurityConfig/AuthController) - backend'in seed ettiği admin hesabıyla
+// (bkz. utils/adminAuth.ts) login olup alınan token bu isteğe ekleniyor.
 async function registerUser(request: APIRequestContext): Promise<{ username: string; password: string }> {
   const username = `adminpanel_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
   const password = 'TestSifre123';
-  const adminToken = await loginViaApi(request, 'Elif', 'TestSifre123');
+  const adminToken = await loginAsAdmin(request);
   const response = await request.post(`${BACKEND_URL}/api/auth/register`, {
     headers: { Authorization: `Bearer ${adminToken}` },
     data: { username, password },
@@ -28,6 +27,8 @@ async function registerUser(request: APIRequestContext): Promise<{ username: str
   return { username, password };
 }
 
+// Admin dışındaki (ör. testin kendi oluşturduğu) herhangi bir kullanıcıyla login için -
+// admin bootstrap'ından farklı olarak burada kimlik bilgileri parametre olarak geliyor.
 async function loginViaApi(request: APIRequestContext, username: string, password: string): Promise<string> {
   const response = await request.post(`${BACKEND_URL}/api/auth/login`, {
     data: { username, password },
@@ -39,8 +40,9 @@ async function loginViaApi(request: APIRequestContext, username: string, passwor
 test.describe('Admin Paneli - Kullanıcı Yönetimi', () => {
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
+    const { username, password } = getAdminCredentials();
     await loginPage.goto();
-    await loginPage.login('Elif', 'TestSifre123');
+    await loginPage.login(username, password);
   });
 
   test('kullanıcı ekleme', async ({ page }) => {
@@ -53,16 +55,17 @@ test.describe('Admin Paneli - Kullanıcı Yönetimi', () => {
     await expect(adminPanel.userRow(username)).toBeVisible();
   });
 
-  // NOT: Orijinal istek "son admin silinemez" başlığındaydı. Sistemde şu an tek gerçek
-  // ADMIN (Elif) var ve o, diğer tüm testlerin login için kullandığı hesap - onu silmeyi
-  // DENEMEK bile (backend engellese dahi) testler arası paylaşılan bir hesapla riskli bir
-  // oyun oynamak demek. Bunun yerine, kullanıcının kendi önerdiği güvenli alternatifi
-  // uyguladım: testin kendi oluşturduğu İKİNCİ bir ADMIN'i, "son admin" durumuna hiç
-  // gelmeden (silme anında sistemde 2 admin var: Elif + bu) siliyoruz - bu, koruma
+  // NOT: Orijinal istek "son admin silinemez" başlığındaydı. beforeEach'te login olunan
+  // hesap (bkz. utils/adminAuth.ts - backend'in .env'den seed ettiği admin), diğer tüm
+  // testlerin login için kullandığı paylaşılan bootstrap hesabı - onu silmeyi DENEMEK bile
+  // (backend engellese dahi) paylaşılan bir hesapla riskli bir oyun oynamak demek. Bunun
+  // yerine, kullanıcının kendi önerdiği güvenli alternatifi uyguladım: testin kendi
+  // oluşturduğu İKİNCİ bir ADMIN'i, "son admin" durumuna hiç gelmeden (silme anında
+  // sistemde en az 2 admin var: bootstrap admin + bu) siliyoruz - bu, koruma
   // mekanizmasının admin sayısı yeterliyken silmeyi ENGELLEMEDİĞİNİ kanıtlıyor.
-  // Gerçek "son admin engellendi" davranışını (Elif'i silmeyi deneyip 409 aldığını
-  // görmek) test etmek Elif'in silinmeye çalışılmasını gerektirir - bu adımı SİZİN
-  // onayınız olmadan yazmadım (bkz. konuşmadaki talebiniz). Bulduğum gerçek davranış:
+  // Gerçek "son admin engellendi" davranışını (bootstrap admin'i silmeyi deneyip 409
+  // aldığını görmek) test etmek o hesabın silinmeye çalışılmasını gerektirir - bu adımı
+  // SİZİN onayınız olmadan yazmadım (bkz. konuşmadaki talebiniz). Bulduğum gerçek davranış:
   // backend'de GERÇEKTEN bir son-admin koruması var - UserManagementService.deleteUser():
   // `if (user.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1)
   // throw new LastAdminException(...)` -> controller bunu 409 olarak dönüyor, frontend
@@ -134,7 +137,8 @@ test.describe('Admin Paneli - Kullanıcı Yönetimi', () => {
 
     await formPage.noteCard(version).click();
     // canManage = role === "ADMIN" || note.createdByUsername === currentUsername -
-    // Elif ADMIN olduğu için not kendisine ait olmasa da Düzenle/Sil görünür olmalı.
+    // beforeEach'te giriş yapılan hesap ADMIN olduğu için not kendisine ait olmasa da
+    // Düzenle/Sil görünür olmalı.
     await expect(archivePage.editNoteButton(version)).toBeVisible();
     await expect(archivePage.deleteNoteButton(version)).toBeVisible();
 
@@ -162,7 +166,7 @@ test.describe('Admin Paneli - Kullanıcı Yönetimi', () => {
     const loginPage = new LoginPage(page);
     const testUser = await registerUser(request);
 
-    // beforeEach zaten Elif/ADMIN ile giriş yaptı - şimdi çıkış yapıp testin kendi
+    // beforeEach zaten ADMIN ile giriş yaptı - şimdi çıkış yapıp testin kendi
     // oluşturduğu USER hesabıyla tekrar giriş yapıyoruz (HomePage.tsx: "ADMIN buraya hiç
     // düşmüyor, USER hiçbir zaman sidebar görmemeli" yorumunu doğrudan doğrulamak için).
     await adminPanel.logout();
