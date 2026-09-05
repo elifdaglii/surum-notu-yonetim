@@ -36,8 +36,9 @@ public class SecurityConfig {
                         // @PreAuthorize("hasRole('ADMIN')") ile ek olarak ADMIN'e kısıtlanıyor.
                         // Self-servis kayıt kapatıldı (önceki karar); kullanıcı oluşturmanın tek
                         // yolu artık /api/admin/users (bkz. AdminController).
-                        // debug/reset-code: kimlik dogrulamasiz erisilebilir ama devre disiyken
-                        // (varsayilan, bkz. AuthController.debugResetCodeEnabled) hep 404 doner.
+                        // debug/reset-code: sadece "dev" profilinde register olan
+                        // AuthDebugController'a ait (bkz. o sinif) - prod'da bu path'e hicbir
+                        // controller cevap vermez (404), dev'de de flag kapaliysa yine 404 doner.
                         .requestMatchers("/api/auth/login", "/api/auth/forgot-password",
                                 "/api/auth/reset-password", "/api/auth/debug/reset-code", "/error").permitAll()
                         .anyRequest().authenticated()

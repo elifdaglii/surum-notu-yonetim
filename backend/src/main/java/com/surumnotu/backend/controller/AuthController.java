@@ -1,19 +1,15 @@
 package com.surumnotu.backend.controller;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.surumnotu.backend.dto.DebugResetCodeResponse;
 import com.surumnotu.backend.dto.ForgotPasswordRequest;
 import com.surumnotu.backend.dto.ForgotPasswordResponse;
 import com.surumnotu.backend.dto.LoginRequest;
@@ -29,13 +25,6 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
-
-    // Varsayilan false: /api/auth/debug/reset-code SADECE bu true iken bir sey
-    // dondurur (bkz. application.properties app.debug-reset-code-enabled) -
-    // gercek bir deploy'da ASLA true olmamali, aksi halde herkes herhangi bir
-    // kullanicinin aktif sifre sifirlama kodunu okuyabilir.
-    @Value("${app.debug-reset-code-enabled:false}")
-    private boolean debugResetCodeEnabled;
 
     public AuthController(AuthService authService) {
         this.authService = authService;
@@ -63,18 +52,8 @@ public class AuthController {
         return ResponseEntity.ok(authService.forgotPassword(request.username()));
     }
 
-    // SADECE test/gelistirme icin (bkz. debugResetCodeEnabled) - Playwright'in gercek
-    // bir email kutusunu okumadan sifirlama kodunu alabilmesi icin var. Devre disiyken
-    // (varsayilan) her zaman 404 doner, kimlik dogrulamasi olsa dahi hicbir bilgi sizdirmaz.
-    @GetMapping("/debug/reset-code")
-    public ResponseEntity<DebugResetCodeResponse> debugResetCode(@RequestParam String username) {
-        if (!debugResetCodeEnabled) {
-            return ResponseEntity.notFound().build();
-        }
-        return authService.peekResetCode(username)
-                .map(code -> ResponseEntity.ok(new DebugResetCodeResponse(code)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
+    // Debug/reset-code endpoint'i artik burada degil - bkz. AuthDebugController
+    // (@Profile("dev"), sadece dev profilinde register olur).
 
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
