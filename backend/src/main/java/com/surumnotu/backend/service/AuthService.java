@@ -38,11 +38,14 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final PasswordResetMailService passwordResetMailService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
+            PasswordResetMailService passwordResetMailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.passwordResetMailService = passwordResetMailService;
     }
 
     public LoginResponse login(String username, String rawPassword) {
@@ -57,7 +60,7 @@ public class AuthService {
         return new LoginResponse(token, user.getRole());
     }
 
-    public void register(String username, String rawPassword) {
+    public void register(String username, String rawPassword, String email) {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new UsernameAlreadyExistsException(username);
         }
@@ -66,6 +69,7 @@ public class AuthService {
                 .username(username)
                 .password(passwordEncoder.encode(rawPassword))
                 .role(Role.USER)
+                .email(email)
                 .build();
 
         userRepository.save(user);
@@ -73,12 +77,12 @@ public class AuthService {
 
     // Kullanici bulunamasa da her zaman ayni genel mesaji donuyoruz (username
     // enumeration'a karsi). Kod, kullanici bulunduysa VE rate limit'e takilmadiysa
-    // dolduruluyor - email gonderimi yok, dev-mode olarak dogrudan response'ta
-    // donuluyor. Rate limit'e takilan istekler de (enumeration'a karsi) "kullanici
-    // yok" ile birebir ayni yaniti aliyor - kod uretmeden sessizce yok sayiliyor.
+    // uretilip DB'ye kaydediliyor, ardindan kullanicinin kayitli email'ine gonderiliyor
+    // (bkz. PasswordResetMailService) - artik response'ta donmuyor. Rate limit'e
+    // takilan istekler de (enumeration'a karsi) "kullanici yok" ile birebir ayni
+    // yaniti aliyor - kod uretmeden/gondermeden sessizce yok sayiliyor.
     public ForgotPasswordResponse forgotPassword(String username) {
         Optional<User> maybeUser = userRepository.findByUsername(username);
-        String code = null;
 
         if (maybeUser.isPresent()) {
             User user = maybeUser.get();
@@ -86,16 +90,30 @@ public class AuthService {
                     && user.getResetCodeRequestedAt().plus(RESET_REQUEST_COOLDOWN).isAfter(Instant.now());
 
             if (!rateLimited) {
-                code = generateResetCode();
+                String code = generateResetCode();
                 user.setResetToken(code);
                 user.setResetTokenExpiry(Instant.now().plus(RESET_TOKEN_VALIDITY));
                 user.setResetCodeAttempts(0);
                 user.setResetCodeRequestedAt(Instant.now());
                 userRepository.save(user);
+
+                if (user.getEmail() != null && !user.getEmail().isBlank()) {
+                    passwordResetMailService.sendResetCode(user.getEmail(), code);
+                }
             }
         }
 
-        return new ForgotPasswordResponse("Kullanici sistemde mevcutsa bir sifirlama kodu olusturuldu", code);
+        return new ForgotPasswordResponse("Kullanici sistemde mevcutsa bir sifirlama kodu olusturuldu");
+    }
+
+    // SADECE test/gelistirme debug endpoint'i icin (bkz. AuthController.debugResetCode) -
+    // aktif (suresi dolmamis) resetToken'i geri dondurur, yoksa/dolmussa bos doner.
+    public Optional<String> peekResetCode(String username) {
+        return userRepository.findByUsername(username)
+                .filter(user -> user.getResetToken() != null
+                        && user.getResetTokenExpiry() != null
+                        && user.getResetTokenExpiry().isAfter(Instant.now()))
+                .map(User::getResetToken);
     }
 
     // 6 haneli, sifir dolgulu sayisal dogrulama kodu (orn. "042913") - SecureRandom

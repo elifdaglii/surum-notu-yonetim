@@ -41,7 +41,8 @@ public class AdminController {
     @PostMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
-        UserResponse created = userManagementService.createUser(request.username(), request.password(), request.role());
+        UserResponse created = userManagementService.createUser(
+                request.username(), request.password(), request.role(), request.email());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -56,7 +57,7 @@ public class AdminController {
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request,
                                                      Principal principal) {
         UserResponse updated = userManagementService.updateUser(
-                id, request.username(), request.password(), request.role(), principal.getName());
+                id, request.username(), request.password(), request.role(), request.email(), principal.getName());
         return ResponseEntity.ok(updated);
     }
 

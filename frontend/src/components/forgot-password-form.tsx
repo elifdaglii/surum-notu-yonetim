@@ -1,31 +1,26 @@
 import { useState, type FormEvent } from "react";
-import { Check, Copy } from "lucide-react";
 
 import { forgotPassword } from "@/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type ForgotPasswordFormProps = {
-  // Backend kod döndüğünde (kullanıcı bulunduysa) çağrılır - ResetPasswordForm'a
-  // geçiş için ForgotPasswordPage'e kodu ve kullanıcı adını iletir (backend artık
-  // deneme sayacını hesap bazında tuttuğu için reset-password isteğinde username
-  // da gerekiyor). Kullanıcı bulunamadıysa ya da rate limit'e takıldıysa (kod
-  // null) çağrılmaz, bu ekranda sadece genel başarı mesajı gösterilir.
-  onTokenGenerated: (token: string, username: string) => void;
+  // Backend istek başarıyla işlendiğinde (kullanıcı bulunsun ya da bulunmasın, aynı
+  // genel mesajla) çağrılır - ForgotPasswordPage'e adım 2'ye (kod girişi) geçmesi
+  // için kullanıcı adını iletir. Kod artık email ile gönderiliyor, ekranda gösterilmiyor.
+  onRequested: (username: string) => void;
 };
 
 /**
- * "Şifremi Unuttum" akışının ilk adımı: kullanıcı adı girilir, backend'den üretilen
- * 6 haneli tek kullanımlık doğrulama kodu ekranda gösterilir (email yok - dev-mode
- * gösterim, SNYS-5).
+ * "Şifremi Unuttum" akışının ilk adımı: kullanıcı adı girilir, backend kullanıcı
+ * bulunduysa 6 haneli tek kullanımlık doğrulama kodunu kayıtlı email adresine gönderir.
  */
-export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm({ onRequested }: ForgotPasswordFormProps) {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,19 +35,12 @@ export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps
     try {
       const result = await forgotPassword(username.trim());
       setMessage(result.message);
-      setToken(result.token);
+      setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleCopy() {
-    if (!token) return;
-    await navigator.clipboard.writeText(token);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
@@ -74,7 +62,7 @@ export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps
             if (error) setError(null);
           }}
           aria-invalid={!!error}
-          disabled={loading}
+          disabled={loading || submitted}
         />
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
@@ -82,37 +70,23 @@ export function ForgotPasswordForm({ onTokenGenerated }: ForgotPasswordFormProps
       {message && (
         <div className="flex flex-col gap-2 rounded-lg border border-input bg-muted/30 p-3">
           <p className="text-sm text-foreground">{message}</p>
-
-          {token && (
-            <>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded-md bg-background px-2.5 py-1.5 text-center font-mono text-sm tracking-[0.3em] text-foreground ring-1 ring-foreground/10">
-                  {token}
-                </code>
-                <Button type="button" variant="outline" size="icon-sm" onClick={handleCopy} aria-label="Kodu kopyala">
-                  {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Bu kod 5 dakika geçerlidir ve en fazla 5 yanlış denemeye izin verir.
-                Gerçek bir uygulamada bu kod e-posta ile gönderilir; burada e-posta
-                altyapısı olmadığı için doğrudan gösteriliyor.
-              </p>
-              <Button
-                type="button"
-                onClick={() => onTokenGenerated(token, username.trim())}
-                className="w-full"
-              >
-                Şifreyi Sıfırla
-              </Button>
-            </>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Kullanıcı sistemde kayıtlıysa bir doğrulama kodu email adresine gönderildi.
+            Kodu aldıysanız devam edin.
+          </p>
+          <Button
+            type="button"
+            onClick={() => onRequested(username.trim())}
+            className="w-full"
+          >
+            Devam Et
+          </Button>
         </div>
       )}
 
-      {!token && (
+      {!submitted && (
         <Button type="submit" disabled={loading} className="w-full">
-          {loading ? "Oluşturuluyor..." : "Doğrulama Kodu Oluştur"}
+          {loading ? "Gönderiliyor..." : "Doğrulama Kodu Oluştur"}
         </Button>
       )}
     </form>

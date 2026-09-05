@@ -21,7 +21,7 @@ public class UserManagementService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public UserResponse createUser(String username, String rawPassword, Role role) {
+    public UserResponse createUser(String username, String rawPassword, Role role, String email) {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new UsernameAlreadyExistsException(username);
         }
@@ -30,6 +30,7 @@ public class UserManagementService {
                 .username(username)
                 .password(passwordEncoder.encode(rawPassword))
                 .role(role)
+                .email(email)
                 .build();
 
         return toResponse(userRepository.save(user));
@@ -43,7 +44,8 @@ public class UserManagementService {
 
     // currentUsername: istegi yapan (giris yapmis) admin'in kullanici adi - hem
     // "kendi rolunu dusuremez" kontrolu hem de son ADMIN korumasi icin lazim.
-    public UserResponse updateUser(Long id, String username, String rawPassword, Role role, String currentUsername) {
+    public UserResponse updateUser(Long id, String username, String rawPassword, Role role, String email,
+            String currentUsername) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanici bulunamadi: " + id));
 
@@ -66,6 +68,7 @@ public class UserManagementService {
 
         user.setUsername(username);
         user.setRole(role);
+        user.setEmail(email);
         if (rawPassword != null && !rawPassword.isBlank()) {
             user.setPassword(passwordEncoder.encode(rawPassword));
         }
@@ -85,6 +88,6 @@ public class UserManagementService {
     }
 
     private UserResponse toResponse(User user) {
-        return new UserResponse(user.getId(), user.getUsername(), user.getRole());
+        return new UserResponse(user.getId(), user.getUsername(), user.getRole(), user.getEmail());
     }
 }

@@ -5,9 +5,9 @@ export class ForgotPasswordPage {
   readonly forgotPasswordButton: Locator;
   readonly usernameInput: Locator;
   readonly generateCodeButton: Locator;
-  // Adım 1 sonundaki "Şifreyi Sıfırla" butonu - submit değil, adım 2'ye geçirir
-  // (bkz. forgot-password-form.tsx: onTokenGenerated). Pin input'u ancak bu
-  // tıklamadan sonra DOM'a eklenir.
+  // Adım 1 sonundaki "Devam Et" butonu - submit değil, adım 2'ye geçirir (bkz.
+  // forgot-password-form.tsx: onRequested). Pin input'u ancak bu tıklamadan
+  // sonra DOM'a eklenir. Kod artık ekranda değil, kullanıcının email'inde.
   readonly confirmCodeButton: Locator;
   readonly pinInput: Locator;
   readonly newPasswordInput: Locator;
@@ -19,7 +19,7 @@ export class ForgotPasswordPage {
     this.forgotPasswordButton = page.getByRole('button', { name: 'Şifremi Unuttum' });
     this.usernameInput = page.getByRole('textbox', { name: 'KULLANICI ADI' });
     this.generateCodeButton = page.getByRole('button', { name: 'Doğrulama Kodu Oluştur' });
-    this.confirmCodeButton = page.getByRole('button', { name: 'Şifreyi Sıfırla' });
+    this.confirmCodeButton = page.getByRole('button', { name: 'Devam Et' });
     this.pinInput = page.getByRole('textbox', { name: 'DOĞRULAMA KODU' });
     this.newPasswordInput = page.getByRole('textbox', { name: 'YENİ ŞİFRE', exact: true });
     this.confirmPasswordInput = page.getByRole('textbox', { name: 'YENİ ŞİFRE (TEKRAR)' });
@@ -39,12 +39,6 @@ export class ForgotPasswordPage {
   // Adım 1 -> adım 2 geçişi. Pin input'u ancak bu çağrıdan sonra erişilebilir olur.
   async advanceToResetStep() {
     await this.confirmCodeButton.click();
-  }
-
-  // Backend'in ürettiği ve reset-password-form.tsx'in initialToken olarak
-  // önceden doldurduğu gerçek kodu okur (placeholder değil, gerçek geçerli kod).
-  async getAutoFilledPin(): Promise<string> {
-    return this.pinInput.inputValue();
   }
 
   async submitReset(pin: string, newPassword: string, confirmPassword: string) {

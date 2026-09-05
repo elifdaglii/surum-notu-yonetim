@@ -2,6 +2,7 @@ package com.surumnotu.backend.dto;
 
 import com.surumnotu.backend.entity.Role;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,6 +12,8 @@ public record UpdateUserRequest(
         // Opsiyonel: null/bos birakilirsa sifre degismez - sadece doluysa (ve o zaman
         // en az 8 karakter olmasi gerekir) guncellenir. Frontend bos alani null olarak gonderiyor.
         @Size(min = 8, message = "Sifre en az 8 karakter olmali") String password,
-        @NotNull(message = "Rol secilmelidir") Role role
+        @NotNull(message = "Rol secilmelidir") Role role,
+        // Opsiyonel: doluysa sifremi unuttum akisinda kod bu adrese gonderilir.
+        @Email(message = "Gecerli bir email adresi girin") String email
 ) {
 }

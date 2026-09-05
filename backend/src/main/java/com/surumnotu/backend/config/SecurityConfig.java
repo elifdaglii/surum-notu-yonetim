@@ -36,8 +36,10 @@ public class SecurityConfig {
                         // @PreAuthorize("hasRole('ADMIN')") ile ek olarak ADMIN'e kısıtlanıyor.
                         // Self-servis kayıt kapatıldı (önceki karar); kullanıcı oluşturmanın tek
                         // yolu artık /api/admin/users (bkz. AdminController).
+                        // debug/reset-code: kimlik dogrulamasiz erisilebilir ama devre disiyken
+                        // (varsayilan, bkz. AuthController.debugResetCodeEnabled) hep 404 doner.
                         .requestMatchers("/api/auth/login", "/api/auth/forgot-password",
-                                "/api/auth/reset-password", "/error").permitAll()
+                                "/api/auth/reset-password", "/api/auth/debug/reset-code", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

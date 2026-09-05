@@ -33,15 +33,14 @@ export async function login(username: string, password: string): Promise<LoginRe
 
 type ForgotPasswordResult = {
   message: string;
-  // Kullanıcı bulunduysa dolu, bulunamadıysa null (email yok, dev-mode olarak
-  // 6 haneli kod doğrudan response'ta dönüyor - bkz. backend AuthService.forgotPassword).
-  token: string | null;
 };
 
 /**
  * POST /api/auth/forgot-password isteği atar. Kullanıcı sistemde olsun ya da
  * olmasın backend her zaman 200 ve aynı genel mesajı döner (username enumeration'a
- * karşı) - sadece token alanı kullanıcı bulunduysa dolu gelir (6 haneli sayısal kod).
+ * karşı). Kod artık response'ta dönmüyor - kullanıcı bulunduysa (ve rate limit'e
+ * takılmadıysa) kayıtlı email adresine gönderiliyor (bkz. backend
+ * AuthService.forgotPassword, PasswordResetMailService).
  */
 export async function forgotPassword(username: string): Promise<ForgotPasswordResult> {
   const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {

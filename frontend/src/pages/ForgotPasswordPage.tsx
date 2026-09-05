@@ -30,12 +30,11 @@ const STEP_DESCRIPTIONS: Record<Step, string> = {
 /**
  * "Şifremi Unuttum" akışı - login sayfasıyla aynı tam sayfa stilinde, LoginPage'e
  * paralel ayrı bir "sayfa" (bu projede router yok, App.tsx'te view state'iyle
- * gösteriliyor). Email/SMTP olmadığı için 6 haneli kod adım 1'de doğrudan ekranda
- * gösteriliyor (SNYS-5).
+ * gösteriliyor). 6 haneli kod artık kullanıcının kayıtlı email adresine gönderiliyor,
+ * ekranda gösterilmiyor (bkz. backend AuthService.forgotPassword).
  */
 function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
   const [step, setStep] = useState<Step>("request");
-  const [token, setToken] = useState("");
   const [username, setUsername] = useState("");
 
   return (
@@ -56,9 +55,8 @@ function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
         <CardContent>
           {step === "request" && (
             <ForgotPasswordForm
-              onTokenGenerated={(generatedToken, generatedUsername) => {
-                setToken(generatedToken);
-                setUsername(generatedUsername);
+              onRequested={(requestedUsername) => {
+                setUsername(requestedUsername);
                 setStep("reset");
               }}
             />
@@ -67,7 +65,7 @@ function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
           {step === "reset" && (
             <ResetPasswordForm
               username={username}
-              initialToken={token}
+              initialToken=""
               onSuccess={() => setStep("done")}
             />
           )}

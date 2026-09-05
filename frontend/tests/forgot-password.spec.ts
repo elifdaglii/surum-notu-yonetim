@@ -26,12 +26,33 @@ async function registerUniqueUser(request: APIRequestContext): Promise<string> {
   const adminToken = await loginAsAdmin(request);
   const response = await request.post(`${BACKEND_URL}/api/auth/register`, {
     headers: { Authorization: `Bearer ${adminToken}` },
-    data: { username, password: REGISTER_PASSWORD },
+    // email: kod artık gerçekten gönderiliyor (bkz. backend AuthService.forgotPassword) -
+    // gerçek bir gönderim denemesi tetiklemek için sahte de olsa bir adres veriyoruz.
+    data: { username, password: REGISTER_PASSWORD, email: `${username}@example.com` },
   });
   if (!response.ok()) {
     throw new Error(`Test kullanıcısı oluşturulamadı: ${response.status()} ${await response.text()}`);
   }
   return username;
+}
+
+// Kod artık ekranda/response'ta değil, kullanıcının email'inde - Playwright gerçek bir
+// email kutusunu okuyamayacağı için backend'in SADECE test/geliştirme amaçlı debug
+// endpoint'ini kullanıyoruz (bkz. backend AuthController.debugResetCode,
+// app.debug-reset-code-enabled). Bu endpoint devre dışıyken (varsayılan) 404 döner -
+// bu durumda backend'in .env dosyasında DEBUG_RESET_CODE_ENABLED=true olması gerekir.
+async function fetchResetCode(request: APIRequestContext, username: string): Promise<string> {
+  const response = await request.get(`${BACKEND_URL}/api/auth/debug/reset-code`, {
+    params: { username },
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `Sıfırlama kodu okunamadı (${response.status()}) - backend .env dosyasında ` +
+        'DEBUG_RESET_CODE_ENABLED=true olduğundan emin olun',
+    );
+  }
+  const { code } = (await response.json()) as { code: string };
+  return code;
 }
 
 test.describe('Şifremi Unuttum', () => {
@@ -42,7 +63,7 @@ test.describe('Şifremi Unuttum', () => {
     await forgotPasswordPage.requestCode(username);
     await forgotPasswordPage.advanceToResetStep();
 
-    const validPin = await forgotPasswordPage.getAutoFilledPin();
+    const validPin = await fetchResetCode(request, username);
     expect(validPin).toMatch(/^\d{6}$/);
 
     await forgotPasswordPage.submitReset(validPin, 'Yenisifre123', 'Yenisifre123');
@@ -57,7 +78,7 @@ test.describe('Şifremi Unuttum', () => {
     await forgotPasswordPage.requestCode(username);
     await forgotPasswordPage.advanceToResetStep();
 
-    const validPin = await forgotPasswordPage.getAutoFilledPin();
+    const validPin = await fetchResetCode(request, username);
     await forgotPasswordPage.submitReset(validPin, 'Yenisifre123', 'FarkliSifre456');
 
     await expect(page.getByText('Şifreler eşleşmiyor')).toBeVisible();
