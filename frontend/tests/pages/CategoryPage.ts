@@ -6,8 +6,8 @@ export class CategoryPage {
   readonly categoryNameInput: Locator;
   readonly addCategoryButton: Locator;
   readonly categoryFormError: Locator;
-  // CategoryService.delete() -> CategoryInUseException mesajı (backend, ASCII):
-  // "Bu kategoriye bagli N surum notu var, once onlari baska bir kategoriye tasiyin veya silin"
+  // CategoryService.delete() -> CategoryInUseException mesajı (backend):
+  // "Bu kategoriye bağlı N sürüm notu var, önce onları başka bir kategoriye taşıyın veya silin"
   readonly categoryDeleteError: Locator;
 
   constructor(page: Page) {
@@ -16,7 +16,7 @@ export class CategoryPage {
     this.categoryNameInput = page.getByRole('textbox', { name: 'KATEGORİ ADI' });
     this.addCategoryButton = page.getByRole('button', { name: 'Kategori Ekle' });
     this.categoryFormError = page.getByText('Kategori oluşturulamadı. Kategori adını kontrol edin');
-    this.categoryDeleteError = page.getByText(/Bu kategoriye bagli \d+ surum notu var/);
+    this.categoryDeleteError = page.getByText(/Bu kategoriye bağlı \d+ sürüm notu var/);
   }
 
   // AdminPage.tsx: ADMIN girişinde varsayılan tab "releaseNotes" - buraya gelince
