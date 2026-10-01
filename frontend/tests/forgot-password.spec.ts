@@ -1,6 +1,7 @@
 import { test, expect, APIRequestContext } from '@playwright/test';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { BACKEND_URL, loginAsAdmin } from './utils/adminAuth';
+import { uniqueTestUsername } from './utils/testData';
 
 const REGISTER_PASSWORD = 'GecmisSifre123';
 
@@ -16,7 +17,7 @@ type TestUser = {
 // kendi izole, benzersiz (timestamp + random) hesabını backend'e doğrudan register
 // ederek oluşturur - sabit bir kullanıcı adına asla bağımlı değildir.
 async function registerUniqueUser(request: APIRequestContext): Promise<TestUser> {
-  const username = `pwreset_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+  const username = uniqueTestUsername('pwreset');
   const adminToken = await loginAsAdmin(request);
   const response = await request.post(`${BACKEND_URL}/api/auth/register`, {
     headers: { Authorization: `Bearer ${adminToken}` },

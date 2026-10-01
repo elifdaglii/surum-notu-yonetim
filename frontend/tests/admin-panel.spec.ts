@@ -3,7 +3,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { ReleaseNoteFormPage } from './pages/ReleaseNoteFormPage';
 import { AdminPanelPage } from './pages/AdminPanelPage';
-import { uniqueVersion } from './utils/testData';
+import { uniqueVersion, uniqueTestUsername } from './utils/testData';
 import { BACKEND_URL, getAdminCredentials, loginAsAdmin } from './utils/adminAuth';
 
 // Senaryo 4/5 için testin kendi oluşturduğu, garantili benzersiz bir USER hesabı -
@@ -14,7 +14,7 @@ import { BACKEND_URL, getAdminCredentials, loginAsAdmin } from './utils/adminAut
 // bkz. backend SecurityConfig/AuthController) - backend'in seed ettiği admin hesabıyla
 // (bkz. utils/adminAuth.ts) login olup alınan token bu isteğe ekleniyor.
 async function registerUser(request: APIRequestContext): Promise<{ username: string; password: string }> {
-  const username = `adminpanel_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+  const username = uniqueTestUsername('adminpanel');
   const password = 'TestSifre123';
   const adminToken = await loginAsAdmin(request);
   const response = await request.post(`${BACKEND_URL}/api/auth/register`, {
@@ -47,7 +47,7 @@ test.describe('Admin Paneli - Kullanıcı Yönetimi', () => {
 
   test('kullanıcı ekleme', async ({ page }) => {
     const adminPanel = new AdminPanelPage(page);
-    const username = `kullanici_${Date.now()}`;
+    const username = uniqueTestUsername('kullanici');
 
     await adminPanel.goto();
     await adminPanel.addUser(username, 'TestSifre123', 'USER');
@@ -73,7 +73,7 @@ test.describe('Admin Paneli - Kullanıcı Yönetimi', () => {
   // silinemez" mesajına çeviriyor (bkz. adminPanel.userDeleteError).
   test('ikinci admin silinebilir (son admin koruması yanlışlıkla engel olmuyor)', async ({ page }) => {
     const adminPanel = new AdminPanelPage(page);
-    const username = `ikincitest_admin_${Date.now()}`;
+    const username = uniqueTestUsername('ikincitest_admin');
 
     await adminPanel.goto();
     await adminPanel.addUser(username, 'TestSifre123', 'ADMIN');
@@ -92,8 +92,8 @@ test.describe('Admin Paneli - Kullanıcı Yönetimi', () => {
     // diğerinin alt dizesi olsaydı (örn. sadece sona ek eklenseydi), yeniden adlandırma
     // sonrası "eski kullanıcı adı artık görünmüyor" kontrolü satırın YENİ adını da
     // (içerdiği için) yanlışlıkla eşleştirip testi anlamsızlaştırabilirdi.
-    const originalUsername = `duzenlenecek_${Date.now()}`;
-    const newUsername = `duzenlendi_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    const originalUsername = uniqueTestUsername('duzenlenecek');
+    const newUsername = uniqueTestUsername('duzenlendi');
 
     await adminPanel.goto();
     await adminPanel.addUser(originalUsername, 'TestSifre123', 'USER');

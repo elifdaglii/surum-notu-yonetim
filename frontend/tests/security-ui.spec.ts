@@ -3,12 +3,13 @@ import { LoginPage } from './pages/LoginPage';
 import { AdminPanelPage } from './pages/AdminPanelPage';
 import { GeneralUIPage } from './pages/GeneralUIPage';
 import { BACKEND_URL, getAdminCredentials } from './utils/adminAuth';
+import { uniqueTestUsername } from './utils/testData';
 
 // Saf API testi - tarayıcı/login gerektirmiyor, bu yüzden ayrı, beforeEach'siz bir
 // describe bloğunda.
 test.describe('Register Endpoint Güvenliği', () => {
   test('kapatılan register endpoint çalışmamalı', async ({ request }) => {
-    const username = `sec_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    const username = uniqueTestUsername('sec');
     const response = await request.post(`${BACKEND_URL}/api/auth/register`, {
       data: { username, password: 'TestSifre123' },
     });

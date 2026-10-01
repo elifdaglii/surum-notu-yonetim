@@ -2,7 +2,7 @@ import { test, expect, APIRequestContext } from '@playwright/test';
 import { LoginPage } from './pages/LoginPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { ReleaseNoteFormPage } from './pages/ReleaseNoteFormPage';
-import { uniqueVersion } from './utils/testData';
+import { uniqueVersion, uniqueTestUsername } from './utils/testData';
 import { BACKEND_URL, getAdminCredentials, loginAsAdmin } from './utils/adminAuth';
 
 // uniqueVersion() global olarak benzersiz ama iki bağımsız çağrının sonucu şans eseri
@@ -29,7 +29,7 @@ function nonOverlappingVersion(existing: string[]): string {
 // bkz. backend SecurityConfig/AuthController) - backend'in seed ettiği admin hesabıyla
 // (bkz. utils/adminAuth.ts) login olup alınan token bu isteğe ekleniyor.
 async function createNoteAsNewAuthor(request: APIRequestContext, version: string): Promise<string> {
-  const username = `archauth_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+  const username = uniqueTestUsername('archauth');
   const password = 'TestSifre123';
 
   const adminToken = await loginAsAdmin(request);

@@ -3,7 +3,7 @@ import { LoginPage } from './pages/LoginPage';
 import { CategoryPage } from './pages/CategoryPage';
 import { ReleaseNoteFormPage } from './pages/ReleaseNoteFormPage';
 import { ArchivePage } from './pages/ArchivePage';
-import { uniqueVersion } from './utils/testData';
+import { uniqueVersion, uniqueTestCategoryName } from './utils/testData';
 import { getAdminCredentials } from './utils/adminAuth';
 
 test.describe('Kategori Yönetimi', () => {
@@ -16,7 +16,7 @@ test.describe('Kategori Yönetimi', () => {
 
   test('kategori ekleme', async ({ page }) => {
     const categoryPage = new CategoryPage(page);
-    const categoryName = `Test-${Date.now()}`;
+    const categoryName = uniqueTestCategoryName();
 
     await categoryPage.goto();
     await categoryPage.addCategory(categoryName);
@@ -26,7 +26,7 @@ test.describe('Kategori Yönetimi', () => {
 
   test('kullanılmayan kategori silme', async ({ page }) => {
     const categoryPage = new CategoryPage(page);
-    const categoryName = `Test-${Date.now()}`;
+    const categoryName = uniqueTestCategoryName();
 
     await categoryPage.goto();
     await categoryPage.addCategory(categoryName);
@@ -40,7 +40,7 @@ test.describe('Kategori Yönetimi', () => {
   test('kullanılan kategori silme engeli', async ({ page }) => {
     const categoryPage = new CategoryPage(page);
     const formPage = new ReleaseNoteFormPage(page);
-    const categoryName = `Test-${Date.now()}`;
+    const categoryName = uniqueTestCategoryName();
 
     await categoryPage.goto();
     await categoryPage.addCategory(categoryName);
