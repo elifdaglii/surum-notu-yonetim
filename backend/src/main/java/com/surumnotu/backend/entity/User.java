@@ -32,9 +32,9 @@ public class User {
 
     private String password;
 
-    // Sifremi unuttum akisinda dogrulama kodunun gonderilecegi adres - opsiyonel
-    // (eski/seed edilen kullanicilarda bos olabilir). Bos ise forgotPassword kod
-    // uretir ama email gonderemez (bkz. AuthService.forgotPassword).
+    // Opsiyonel iletisim adresi (eski/seed edilen kullanicilarda bos olabilir).
+    // Sifremi unuttum akisi bu alani KULLANMIYOR - kod sabit bir adrese gidiyor
+    // (bkz. AuthService.forgotPassword).
     private String email;
 
     @Enumerated(EnumType.STRING)

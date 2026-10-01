@@ -96,7 +96,7 @@ class AuthServiceResetFlowIntegrationTest {
     }
 
     @Test
-    void forgotPassword_emailsiKullaniciIcinGondermeyiAtlar() {
+    void forgotPassword_emailsiKullaniciIcinDeGonderir() {
         User user = User.builder()
                 .username("test-no-email")
                 .password(passwordEncoder.encode("originalPass1"))
@@ -106,8 +106,9 @@ class AuthServiceResetFlowIntegrationTest {
 
         authService.forgotPassword("test-no-email");
 
+        // Kod sabit adrese gittigi icin kullanicinin email'inin olmamasi gonderimi engellemez.
         assertThat(readResetToken("test-no-email")).isNotNull();
-        verify(javaMailSender, times(0)).send(any(MimeMessagePreparator.class));
+        verify(javaMailSender, times(1)).send(any(MimeMessagePreparator.class));
     }
 
     @Test

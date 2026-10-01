@@ -77,7 +77,8 @@ public class AuthService {
 
     // Kullanici bulunamasa da her zaman ayni genel mesaji donuyoruz (username
     // enumeration'a karsi). Kod, kullanici bulunduysa VE rate limit'e takilmadiysa
-    // uretilip DB'ye kaydediliyor, ardindan kullanicinin kayitli email'ine gonderiliyor
+    // uretilip DB'ye kaydediliyor, ardindan kullanicidan bagimsiz SABIT tek bir adrese
+    // (app.password-reset.notify-email) gonderiliyor - user.getEmail() kullanilmiyor
     // (bkz. PasswordResetMailService) - artik response'ta donmuyor. Rate limit'e
     // takilan istekler de (enumeration'a karsi) "kullanici yok" ile birebir ayni
     // yaniti aliyor - kod uretmeden/gondermeden sessizce yok sayiliyor.
@@ -97,9 +98,7 @@ public class AuthService {
                 user.setResetCodeRequestedAt(Instant.now());
                 userRepository.save(user);
 
-                if (user.getEmail() != null && !user.getEmail().isBlank()) {
-                    passwordResetMailService.sendResetCode(user.getEmail(), code);
-                }
+                passwordResetMailService.sendResetCode(user.getUsername(), code);
             }
         }
 
