@@ -4,7 +4,7 @@
     {
       "name": "backend",
       "runtimeExecutable": "C:\\Users\\elifd\\OneDrive\\Desktop\\surum-notu-projesi\\backend\\mvnw.cmd",
-      "runtimeArgs": ["spring-boot:run"],
+      "runtimeArgs": ["-f", "C:\\Users\\elifd\\OneDrive\\Desktop\\surum-notu-projesi\\backend\\pom.xml", "spring-boot:run"],
       "port": 8080
     },
     {
